@@ -17,176 +17,174 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 
 public class SosiReader implements Closeable {
 
-	private GeometryFactory gf = new GeometryFactory();
+    private GeometryFactory gf = new GeometryFactory();
 
-	private BufferedReader reader;
+    private BufferedReader reader;
 
-	private int level;
-	private String key;
-	private String value;
-	private String crs;
-	private double xyfactor;
+    private int level;
+    private String key;
+    private String value;
+    private String crs;
+    private double xyfactor;
 
-	public SosiReader(InputStream in) throws IOException {
-		// reader character set from head
-		BufferedInputStream bin = new BufferedInputStream(in);
-		bin.mark(1024);
-		reader = new BufferedReader(new InputStreamReader(bin, "UTF-8"));
+    public SosiReader(InputStream in) throws IOException {
+        // reader character set from head
+        BufferedInputStream bin = new BufferedInputStream(in);
+        bin.mark(1024);
+        reader = new BufferedReader(new InputStreamReader(bin, "UTF-8"));
 
-		Map<String, String> head = new HashMap<String, String>();
-		while (readLine()) {
-			head.put(key, value);
+        Map<String, String> head = new HashMap<String, String>();
+        while (readLine()) {
+            head.put(key, value);
 
-			// make sure we do not look too far
-			if (level == 1 && !"HODE".equals(key)) {
-				break;
-			}
-		}
+            // make sure we do not look too far
+            if (level == 1 && !"HODE".equals(key)) {
+                break;
+            }
+        }
 
-		String characterSet = head.get("TEGNSETT");
-		if (characterSet.startsWith("ISO") && !characterSet.startsWith("ISO-")) {
-			characterSet = characterSet.replace("ISO", "ISO-");
-		}
+        String characterSet = head.get("TEGNSETT");
+        if (characterSet.startsWith("ISO") && !characterSet.startsWith("ISO-")) {
+            characterSet = characterSet.replace("ISO", "ISO-");
+        }
 
-		// fake this one for now. sorry
-		if (characterSet.equals("ISO-8859-10")) {
-			characterSet = "ISO-8859-1";
-		}
+        // fake this one for now. sorry
+        if (characterSet.equals("ISO-8859-10")) {
+            characterSet = "ISO-8859-1";
+        }
 
-		String[] values = head.get("KOORDSYS").split(" ");
-		crs = Koordsys.getEpsgForKoordsys(Integer.parseInt(values[0]));
+        String[] values = head.get("KOORDSYS").split(" ");
+        crs = Koordsys.getEpsgForKoordsys(Integer.parseInt(values[0]));
 
-		xyfactor = Double.parseDouble(head.get("ENHET"));
+        xyfactor = Double.parseDouble(head.get("ENHET"));
 
-		// spool back and read with proper character set.
-		bin.reset();
-		reader = new BufferedReader(new InputStreamReader(bin, characterSet));
+        // spool back and read with proper character set.
+        bin.reset();
+        reader = new BufferedReader(new InputStreamReader(bin, characterSet));
 
-	}
+    }
 
-	public String getCrs() {
-		return crs;
-	}
+    public String getCrs() {
+        return crs;
+    }
 
-	private boolean head = false;
-	private GeometryType currentGeometryType = null;
-	private Map<String, Object> currentAttributes = new HashMap<String, Object>();
-	private List<Coordinate> currentCoordinates = new ArrayList<Coordinate>();
+    private boolean head = false;
+    private GeometryType currentGeometryType = null;
+    private Map<String, Object> currentAttributes = new HashMap<String, Object>();
+    private List<Coordinate> currentCoordinates = new ArrayList<Coordinate>();
 
-	public Feature nextFeature() throws IOException {
-		while (readLine()) {
-			switch (level) {
-			case 1:
-				if ("HODE".equals(key)) {
-					currentGeometryType = null;
-					head = true;
-					break;
-				}
+    public Feature nextFeature() throws IOException {
+        while (readLine()) {
+            switch (level) {
+            case 1:
+                if ("HODE".equals(key)) {
+                    currentGeometryType = null;
+                    head = true;
+                    break;
+                }
 
-				GeometryType previousGeometryType = currentGeometryType;
-				Map<String, Object> previousAttributes = new HashMap<String, Object>(
-						currentAttributes);
-				Coordinate[] previousCoordinates = currentCoordinates
-						.toArray(new Coordinate[currentCoordinates.size()]);
+                GeometryType previousGeometryType = currentGeometryType;
+                Map<String, Object> previousAttributes = new HashMap<String, Object>(
+                        currentAttributes);
+                Coordinate[] previousCoordinates = currentCoordinates
+                        .toArray(new Coordinate[currentCoordinates.size()]);
 
-				if ("SLUTT".equals(key)) {
-					currentGeometryType = null;
-				} else {
-					currentGeometryType = GeometryType.valueOf(key);
-				}
+                if ("SLUTT".equals(key)) {
+                    currentGeometryType = null;
+                } else {
+                    currentGeometryType = GeometryType.valueOf(key);
+                }
 
-				currentAttributes.clear();
-				currentCoordinates.clear();
+                currentAttributes.clear();
+                currentCoordinates.clear();
 
-				if (head) {
-					head = false;
-					continue;
-				}
+                if (head) {
+                    head = false;
+                    continue;
+                }
 
-				Geometry geometry = previousGeometryType.createGeometry(gf,
-						previousCoordinates);
-				return new Feature(previousGeometryType, previousAttributes,
-						geometry);
-			default:
+                Geometry geometry = previousGeometryType.createGeometry(gf, previousCoordinates);
+                return new Feature(previousGeometryType, previousAttributes, geometry);
+            default:
 
-				if ("NØ".equals(key)) {
-					readCoordinateLines(2);
-				} else if ("NØH".equals(key)) {
-					readCoordinateLines(3);
-				} else {
-					currentAttributes.put(key, value);
-				}
+                if ("NØ".equals(key)) {
+                    readCoordinateLines(2);
+                } else if ("NØH".equals(key)) {
+                    readCoordinateLines(3);
+                } else {
+                    currentAttributes.put(key, value);
+                }
 
-			}
+            }
 
-		}
-		return null;
-	}
+        }
+        return null;
+    }
 
-	private void readCoordinateLines(int dim) throws IOException {
+    private void readCoordinateLines(int dim) throws IOException {
 
-		reader.mark(100);
-		while (true) {
-			String line = reader.readLine();
+        reader.mark(100);
+        while (true) {
+            String line = reader.readLine();
 
-			if (line == null || line.startsWith(".")) {
-				reader.reset();
-				break;
-			}
+            if (line == null || line.startsWith(".")) {
+                reader.reset();
+                break;
+            }
 
-			String[] tokens = line.split(" ");
+            String[] tokens = line.split(" ");
 
-			Coordinate coord = new Coordinate(Double.parseDouble(tokens[1])
-					* xyfactor, Double.parseDouble(tokens[0]) * xyfactor);
+            Coordinate coord = new Coordinate(Double.parseDouble(tokens[1]) * xyfactor,
+                    Double.parseDouble(tokens[0]) * xyfactor);
 
-			currentCoordinates.add(coord);
+            currentCoordinates.add(coord);
 
-			reader.mark(100);
-		}
-	}
+            reader.mark(100);
+        }
+    }
 
-	private boolean readLine() throws IOException {
-		level = 0;
-		key = null;
-		value = null;
+    private boolean readLine() throws IOException {
+        level = 0;
+        key = null;
+        value = null;
 
-		String line = reader.readLine();
+        String line = reader.readLine();
 
-		if (line == null) {
-			return false;
-		}
+        if (line == null) {
+            return false;
+        }
 
-		int thisLevel = 0;
-		for (int i = 0; i < line.length(); i++) {
-			if (line.charAt(i) == '.') {
-				thisLevel++;
-			} else {
-				break;
-			}
-		}
+        int thisLevel = 0;
+        for (int i = 0; i < line.length(); i++) {
+            if (line.charAt(i) == '.') {
+                thisLevel++;
+            } else {
+                break;
+            }
+        }
 
-		level = thisLevel;
-		line = line.substring(level);
+        level = thisLevel;
+        line = line.substring(level);
 
-		int p = line.indexOf(' ');
-		if (p > 0) {
-			key = line.substring(0, p);
-			value = line.substring(p + 1);
+        int p = line.indexOf(' ');
+        if (p > 0) {
+            key = line.substring(0, p);
+            value = line.substring(p + 1);
 
-			if (value.startsWith("\"") && value.endsWith("\"")) {
-				value = value.substring(1, value.length() - 1);
-			}
+            if (value.startsWith("\"") && value.endsWith("\"")) {
+                value = value.substring(1, value.length() - 1);
+            }
 
-		} else {
-			key = line;
-			value = null;
-		}
+        } else {
+            key = line;
+            value = null;
+        }
 
-		return true;
-	}
+        return true;
+    }
 
-	public void close() throws IOException {
-		reader.close();
-	}
+    public void close() throws IOException {
+        reader.close();
+    }
 
 }
