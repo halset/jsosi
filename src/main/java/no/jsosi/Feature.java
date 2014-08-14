@@ -10,16 +10,16 @@ import com.vividsolutions.jts.geom.Geometry;
 
 public class Feature {
 
+    private final SosiReader reader;
     private final Integer id;
     private final GeometryType geometryType;
     private final Coordinate[] coordinates;
     private final Map<String, Object> attributes;
     private final RefList refs;
 
-    private Geometry geometry;
-
-    Feature(Integer id, GeometryType geometryType, Map<String, Object> attributes,
+    Feature(SosiReader reader, Integer id, GeometryType geometryType, Map<String, Object> attributes,
             Coordinate[] coordinates, RefList refs) {
+        this.reader = reader;
         this.id = id;
         this.geometryType = geometryType;
         this.attributes = attributes;
@@ -43,20 +43,12 @@ public class Feature {
         return geometryType;
     }
 
-    void prepareGeometry(SosiReader reader) {
-        if (geometry != null) {
-            return;
-        }
-
-        if (geometryType == GeometryType.FLATE) {
-            geometry = refs.createGeometry(reader);
-        } else {
-            geometry = geometryType.createGeometry(reader.getGeometryFactory(), coordinates);
-        }
-    }
-
     public Geometry getGeometry() {
-        return geometry;
+        if (geometryType == GeometryType.FLATE) {
+            return refs.createGeometry(reader);
+        } else {
+            return geometryType.createGeometry(reader.getGeometryFactory(), coordinates);
+        }
     }
 
     public int getCoordinateCount() {

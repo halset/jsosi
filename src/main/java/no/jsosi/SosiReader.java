@@ -132,8 +132,9 @@ public class SosiReader implements Closeable {
                     allRefs.addAll(refList.getRefs());
                 }
 
-                return new Feature(previousFeatureId, previousGeometryType, previousAttributes,
-                        previousCoordinates, refList);
+                return new Feature(this, previousFeatureId, previousGeometryType,
+                        previousAttributes, previousCoordinates, refList);
+                
             default:
 
                 if ("NØ".equals(key)) {
@@ -242,9 +243,7 @@ public class SosiReader implements Closeable {
     }
 
     public Feature getFeature(Integer id) {
-        Feature feature = featureById.get(id);
-        feature.prepareGeometry(this);
-        return feature;
+        return featureById.get(id);
     }
 
     public Feature nextFeature() {
@@ -259,7 +258,6 @@ public class SosiReader implements Closeable {
                 }
             }
 
-            feature.prepareGeometry(this);
             return feature;
         }
         return null;
