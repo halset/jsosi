@@ -230,6 +230,10 @@ public class SosiReader implements Closeable {
         return gf;
     }
 
+    double getXYFactor() {
+        return xyfactor;
+    }
+
     public Feature getFeature(Integer id) {
         Feature feature = featureById.get(id);
         feature.prepareGeometry(this);

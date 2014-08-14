@@ -20,6 +20,7 @@ public class SosiReaderTest extends TestCase {
 
         SosiReader r = new SosiReader(new FileInputStream(file));
         assertEquals("EPSG:25833", r.getCrs());
+        assertEquals(0.01, r.getXYFactor());
 
         List<Feature> features = new ArrayList<Feature>();
         Feature feature;
@@ -37,6 +38,8 @@ public class SosiReaderTest extends TestCase {
         assertNotNull(f.getGeometry());
         assertTrue(f.getGeometry() instanceof Point);
         assertEquals(1, f.getCoordinateCount());
+        assertEquals(253673.99, f.getGeometry().getCoordinates()[0].x, 0.01);
+        assertEquals(6645919.76, f.getGeometry().getCoordinates()[0].y, 0.01);
 
         r.close();
 
