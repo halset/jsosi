@@ -2,29 +2,31 @@ package no.jsosi;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Set;
 import java.util.StringTokenizer;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.LinearRing;
 
-public class RefList {
+class RefList {
 
     private final List<List<Ref>> list = new ArrayList<List<Ref>>();
     private List<Ref> current = new ArrayList<Ref>();
 
-    public RefList() {
+    RefList() {
         list.add(current);
     }
 
-    public void startHole() {
+    private void startHole() {
         current = new ArrayList<Ref>();
         list.add(current);
     }
 
-    public void add(String refList) {
+    void add(String refList) {
         StringTokenizer st = new StringTokenizer(refList);
         while (st.hasMoreTokens()) {
             String token = st.nextToken();
@@ -39,20 +41,30 @@ public class RefList {
         }
     }
 
-    public boolean isEmpty() {
+    boolean isEmpty() {
         return list.size() <= 1 && current.isEmpty();
     }
 
-    public int getNumOfHoles() {
+    int getNumOfHoles() {
         return list.size() - 1;
     }
 
-    public List<Ref> getExteriour() {
+    List<Ref> getExteriour() {
         return Collections.unmodifiableList(list.get(0));
     }
 
-    public List<Ref> getHole(int n) {
+    List<Ref> getHole(int n) {
         return Collections.unmodifiableList(list.get(n + 1));
+    }
+    
+    Set<Integer> getRefs() {
+        Set<Integer> refs = new HashSet<Integer>();
+        for (List<Ref> refList : list) {
+            for (Ref ref : refList) {
+                refs.add(ref.getId());
+            }
+        }
+        return Collections.unmodifiableSet(refs);
     }
 
     Geometry createGeometry(SosiReader reader) {

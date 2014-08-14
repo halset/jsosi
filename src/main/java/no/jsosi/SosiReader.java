@@ -8,10 +8,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
@@ -28,6 +30,7 @@ public class SosiReader implements Closeable {
     private String crs;
     private double xyfactor;
 
+    private final Set<Integer> allRefs = new HashSet<Integer>();
     private final Map<Integer, Feature> featureById = new LinkedHashMap<Integer, Feature>();
     private Iterator<Feature> featureIterator;
 
@@ -124,6 +127,10 @@ public class SosiReader implements Closeable {
 
                 RefList refList = currentRefs;
                 currentRefs = null;
+
+                if (refList != null) {
+                    allRefs.addAll(refList.getRefs());
+                }
 
                 return new Feature(previousFeatureId, previousGeometryType, previousAttributes,
                         previousCoordinates, refList);
@@ -241,12 +248,21 @@ public class SosiReader implements Closeable {
     }
 
     public Feature nextFeature() {
-        if (featureIterator == null || !featureIterator.hasNext()) {
-            return null;
+        while (featureIterator != null && featureIterator.hasNext()) {
+            Feature feature = featureIterator.next();
+
+            // skipping referenced features. hope this is fine..
+            if (allRefs.contains(feature.getId())) {
+                String objtype = (String) feature.get("OBJTYPE");
+                if (objtype != null && objtype.endsWith("grense")) {
+                    continue;
+                }
+            }
+
+            feature.prepareGeometry(this);
+            return feature;
         }
-        Feature feature = featureIterator.next();
-        feature.prepareGeometry(this);
-        return feature;
+        return null;
     }
 
     public void close() throws IOException {

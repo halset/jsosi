@@ -75,21 +75,31 @@ public class SosiReaderTest extends TestCase {
         r.close();
 
     }
-    
+
     public void testArealdekke() throws IOException {
         File file = new File("src/test/resources/1421_Arealdekke.sos");
         assertTrue(file.canRead());
 
         SosiReader r = new SosiReader(new FileInputStream(file));
         assertEquals("EPSG:25832", r.getCrs());
-        
+
         Feature f1 = r.nextFeature();
         assertEquals("10000101", f1.get("OPPDATERINGSDATO"));
         assertEquals("ÅpentOmråde", f1.get("OBJTYPE"));
         assertNull(f1.get("GATENAVN"));
         assertTrue(f1.getGeometry() instanceof Polygon);
         assertTrue(f1.getGeometry().isValid());
-        
+
+        Feature f = null;
+        while ((f = r.nextFeature()) != null) {
+            if (f.getGeometryType() != GeometryType.KURVE) {
+                continue;
+            }
+            String objtype = (String) f.get("OBJTYPE");
+            assertNotNull(objtype);
+            assertFalse(objtype.endsWith("grense"));
+        }
+
         Feature f5763 = r.getFeature(5763);
         assertEquals(5763, f5763.getId().intValue());
         assertEquals("Innsjø", f5763.get("OBJTYPE"));
