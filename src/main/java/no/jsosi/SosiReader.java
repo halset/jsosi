@@ -8,11 +8,12 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.vividsolutions.jts.geom.Coordinate;
-import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.GeometryFactory;
 
 public class SosiReader implements Closeable {
@@ -26,6 +27,9 @@ public class SosiReader implements Closeable {
     private String value;
     private String crs;
     private double xyfactor;
+
+    private final Map<Integer, Feature> featureById = new LinkedHashMap<Integer, Feature>();
+    private Iterator<Feature> featureIterator;
 
     public SosiReader(InputStream in) throws IOException {
         // reader character set from head
@@ -62,6 +66,14 @@ public class SosiReader implements Closeable {
         bin.reset();
         reader = new BufferedReader(new InputStreamReader(bin, characterSet));
 
+        // need to parse all features as FLATE can reference KURVE later in the
+        // file
+        Feature feature = null;
+        while ((feature = nextFeatureInternal()) != null) {
+            featureById.put(feature.getId(), feature);
+        }
+        featureIterator = featureById.values().iterator();
+
     }
 
     public String getCrs() {
@@ -70,20 +82,25 @@ public class SosiReader implements Closeable {
 
     private boolean head = false;
     private GeometryType currentGeometryType = null;
+    private Integer currentFeatureId = null;
     private Map<String, Object> currentAttributes = new HashMap<String, Object>();
     private List<Coordinate> currentCoordinates = new ArrayList<Coordinate>();
+    private RefList currentRefs = null;
 
-    public Feature nextFeature() throws IOException {
+    private Feature nextFeatureInternal() throws IOException {
         while (readLine()) {
             switch (level) {
             case 1:
                 if ("HODE".equals(key)) {
                     currentGeometryType = null;
+                    currentFeatureId = null;
                     head = true;
                     break;
                 }
 
                 GeometryType previousGeometryType = currentGeometryType;
+                Integer previousFeatureId = currentFeatureId;
+
                 Map<String, Object> previousAttributes = new HashMap<String, Object>(
                         currentAttributes);
                 Coordinate[] previousCoordinates = currentCoordinates
@@ -91,8 +108,10 @@ public class SosiReader implements Closeable {
 
                 if ("SLUTT".equals(key)) {
                     currentGeometryType = null;
+                    currentFeatureId = null;
                 } else {
                     currentGeometryType = GeometryType.valueOf(key);
+                    currentFeatureId = Integer.valueOf(value);
                 }
 
                 currentAttributes.clear();
@@ -103,14 +122,21 @@ public class SosiReader implements Closeable {
                     continue;
                 }
 
-                Geometry geometry = previousGeometryType.createGeometry(gf, previousCoordinates);
-                return new Feature(previousGeometryType, previousAttributes, geometry);
+                RefList refList = currentRefs;
+                currentRefs = null;
+
+                return new Feature(previousFeatureId, previousGeometryType, previousAttributes,
+                        previousCoordinates, refList);
             default:
 
                 if ("NØ".equals(key)) {
                     readCoordinateLines(2);
                 } else if ("NØH".equals(key)) {
                     readCoordinateLines(3);
+                } else if ("REF".equals(key)) {
+                    currentRefs = new RefList();
+                    currentRefs.add(value);
+                    readRefs();
                 } else {
                     currentAttributes.put(key, value);
                 }
@@ -139,6 +165,19 @@ public class SosiReader implements Closeable {
 
             currentCoordinates.add(coord);
 
+            reader.mark(100);
+        }
+    }
+
+    private void readRefs() throws IOException {
+        reader.mark(100);
+        while (true) {
+            String line = reader.readLine();
+            if (line == null || line.startsWith(".")) {
+                reader.reset();
+                break;
+            }
+            currentRefs.add(line);
             reader.mark(100);
         }
     }
@@ -175,12 +214,35 @@ public class SosiReader implements Closeable {
                 value = value.substring(1, value.length() - 1);
             }
 
+            if (value.endsWith(":")) {
+                value = value.substring(0, value.length() - 1);
+            }
+
         } else {
             key = line;
             value = null;
         }
 
         return true;
+    }
+
+    GeometryFactory getGeometryFactory() {
+        return gf;
+    }
+
+    public Feature getFeature(Integer id) {
+        Feature feature = featureById.get(id);
+        feature.prepareGeometry(this);
+        return feature;
+    }
+
+    public Feature nextFeature() {
+        if (featureIterator == null || !featureIterator.hasNext()) {
+            return null;
+        }
+        Feature feature = featureIterator.next();
+        feature.prepareGeometry(this);
+        return feature;
     }
 
     public void close() throws IOException {
