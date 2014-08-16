@@ -109,4 +109,19 @@ public class SosiReaderTest extends TestCase {
         r.close();
     }
 
+    public void testNavnISO() throws IOException {
+        File filei = new File("src/test/resources/1421_Navn_iso.sos");
+        assertTrue(filei.canRead());
+        SosiReader ri = new SosiReader(new FileInputStream(filei));
+        assertEquals("EPSG:25832", ri.getCrs());
+
+        Feature fi = null;
+        while ((fi = ri.nextFeature()) != null) {
+            assertEquals("Skrivemåte", fi.get("OBJTYPE"));
+            assertNotNull(fi.getGeometry());
+            assertTrue(fi.getGeometry().isValid());
+        }
+        ri.close();
+    }
+
 }
