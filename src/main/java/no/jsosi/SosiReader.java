@@ -7,6 +7,8 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -33,6 +35,9 @@ public class SosiReader implements Closeable {
     private final Set<Integer> allRefs = new HashSet<Integer>();
     private final Map<Integer, Feature> featureById = new LinkedHashMap<Integer, Feature>();
     private Iterator<Feature> featureIterator;
+    
+    private static final Set<String> HEADERS = Collections.unmodifiableSet(new HashSet<String>(
+            Arrays.asList("TEGNSETT", "KOORDSYS", "ENHET")));
 
     public SosiReader(InputStream in) throws IOException {
         // reader character set from head
@@ -45,19 +50,12 @@ public class SosiReader implements Closeable {
             head.put(key, value);
 
             // make sure we do not look too far
+            if (head.keySet().containsAll(HEADERS)) {
+                break;
+            }
             if (level == 1 && !"HODE".equals(key)) {
                 break;
             }
-        }
-
-        String characterSet = head.get("TEGNSETT");
-        if (characterSet.startsWith("ISO") && !characterSet.startsWith("ISO-")) {
-            characterSet = characterSet.replace("ISO", "ISO-");
-        }
-
-        // fake this one for now. sorry
-        if (characterSet.equals("ISO-8859-10")) {
-            characterSet = "ISO-8859-1";
         }
 
         String[] values = head.get("KOORDSYS").split(" ");
@@ -67,6 +65,7 @@ public class SosiReader implements Closeable {
 
         // spool back and read with proper character set.
         bin.reset();
+        String characterSet = Tegnsett.getCharsetForTegnsett(head.get("TEGNSETT"));
         reader = new BufferedReader(new InputStreamReader(bin, characterSet));
 
         // need to parse all features as FLATE can reference KURVE later in the
