@@ -31,9 +31,10 @@ public class SosiReaderTest extends TestCase {
         assertEquals(33545, features.size());
 
         Feature f = features.get(0);
-        assertEquals("Hans Hanssens vei", f.get("GATENAVN"));
+        assertEquals("Hans Hanssens vei !nocomment", f.get("GATENAVN"));
         assertEquals("SNARØYA", f.get("POSTNAVN"));
         assertEquals("0219", f.get("KOMM"));
+        assertEquals("4", f.get("HUSNR"));
         assertNull(f.get("NØ"));
         assertNotNull(f.getGeometry());
         assertTrue(f.getGeometry() instanceof Point);

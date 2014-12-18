@@ -165,6 +165,16 @@ public class SosiReader implements Closeable {
                 reader.reset();
                 break;
             }
+            
+            // handle comment in coordinate line
+            int commentPosition = line.indexOf('!');
+            if (commentPosition >= 0) {
+                line = line.substring(0, commentPosition);
+                if (line.length() == 0) {
+                    reader.mark(100);
+                    continue;
+                }
+            }
 
             String[] tokens = line.split(" ");
 
@@ -218,6 +228,16 @@ public class SosiReader implements Closeable {
             key = line.substring(0, p);
             value = line.substring(p + 1);
 
+            // look for ""
+            int q1 = value.indexOf('"');
+            int q2 = value.indexOf('"', q1 + 1);
+            
+            // look for comment. after ""
+            int cp = value.indexOf('!', q2);
+            if (cp >= 0) {
+                value = value.substring(0, cp);
+            }
+            
             if (value.startsWith("\"") && value.endsWith("\"")) {
                 value = value.substring(1, value.length() - 1);
             }
