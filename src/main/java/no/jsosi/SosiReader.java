@@ -1,18 +1,18 @@
 package no.jsosi;
 
-import java.io.BufferedInputStream;
 import java.io.BufferedReader;
 import java.io.Closeable;
+import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
+import java.io.RandomAccessFile;
+import java.nio.channels.Channels;
+import java.nio.channels.FileChannel;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Iterator;
-import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -24,6 +24,10 @@ public class SosiReader implements Closeable {
 
     private GeometryFactory gf = new GeometryFactory();
 
+    private boolean deleteFileOnClose = false;
+    private final File file;
+    private final RandomAccessFile raf;
+    private final FileChannel channel;
     private BufferedReader reader;
 
     private int level;
@@ -33,17 +37,19 @@ public class SosiReader implements Closeable {
     private double xyfactor;
 
     private final Set<Integer> allRefs = new HashSet<Integer>();
-    private final Map<Integer, Feature> featureById = new LinkedHashMap<Integer, Feature>();
-    private Iterator<Feature> featureIterator;
-    
+    private final Map<Integer, List<Coordinate>> kurveById = new HashMap<>();
+
     private static final Set<String> HEADERS = Collections.unmodifiableSet(new HashSet<String>(
             Arrays.asList("TEGNSETT", "KOORDSYS", "ENHET")));
+    
+    public SosiReader(File in) throws IOException {
 
-    public SosiReader(InputStream in) throws IOException {
+        this.file = in;
+        this.raf = new RandomAccessFile(in, "r");
+        this.channel = raf.getChannel();
+
         // reader character set from head
-        BufferedInputStream bin = new BufferedInputStream(in);
-        bin.mark(1024);
-        reader = new BufferedReader(new InputStreamReader(bin, "UTF-8"));
+        reader = new BufferedReader(Channels.newReader(channel, "ISO-8859-1"));
 
         Map<String, String> head = new HashMap<String, String>();
         while (readLine()) {
@@ -64,18 +70,37 @@ public class SosiReader implements Closeable {
         xyfactor = Double.parseDouble(head.get("ENHET"));
 
         // spool back and read with proper character set.
-        bin.reset();
+        channel.position(0);
         String characterSet = Tegnsett.getCharsetForTegnsett(head.get("TEGNSETT"));
-        reader = new BufferedReader(new InputStreamReader(bin, characterSet));
+        reader = new BufferedReader(Channels.newReader(channel, characterSet));
 
         // need to parse all features as FLATE can reference KURVE later in the
         // file
         Feature feature = null;
         while ((feature = nextFeatureInternal()) != null) {
-            featureById.put(feature.getId(), feature);
+            if (feature.getGeometryType() != GeometryType.KURVE) {
+                continue;
+            }
+            kurveById.put(feature.getId(), feature.getCoordinates());
         }
-        featureIterator = featureById.values().iterator();
 
+        // spool back once more and read for real
+        channel.position(0);
+        reader = new BufferedReader(Channels.newReader(channel, characterSet));
+
+    }
+
+    /**
+     * {@link SosiReader} operate on file to save memory while handling KURVE
+     * references, so this constructor copy the {@link InputStream} to a
+     * temporary {@link File}
+     * 
+     * @param in
+     * @throws IOException
+     */
+    public SosiReader(InputStream in) throws IOException {
+        this(IOUtils.toTempFile(in));
+        this.deleteFileOnClose = true;
     }
 
     public String getCrs() {
@@ -133,7 +158,7 @@ public class SosiReader implements Closeable {
 
                 return new Feature(this, previousFeatureId, previousGeometryType,
                         previousAttributes, previousCoordinates, refList);
-                
+
             default:
 
                 if ("NØ".equals(key)) {
@@ -164,7 +189,7 @@ public class SosiReader implements Closeable {
                 reader.reset();
                 break;
             }
-            
+
             // handle comment in coordinate line
             int commentPosition = line.indexOf('!');
             if (commentPosition >= 0) {
@@ -230,13 +255,13 @@ public class SosiReader implements Closeable {
             // look for ""
             int q1 = value.indexOf('"');
             int q2 = value.indexOf('"', q1 + 1);
-            
+
             // look for comment. after ""
             int cp = value.indexOf('!', q2);
             if (cp >= 0) {
                 value = value.substring(0, cp);
             }
-            
+
             if (value.startsWith("\"") && value.endsWith("\"")) {
                 value = value.substring(1, value.length() - 1);
             }
@@ -261,13 +286,13 @@ public class SosiReader implements Closeable {
         return xyfactor;
     }
 
-    public Feature getFeature(Integer id) {
-        return featureById.get(id);
+    List<Coordinate> getKurve(Integer id) {
+        return kurveById.get(id);
     }
 
-    public Feature nextFeature() {
-        while (featureIterator != null && featureIterator.hasNext()) {
-            Feature feature = featureIterator.next();
+    public Feature nextFeature() throws IOException {
+        Feature feature = null;
+        while ((feature = nextFeatureInternal()) != null) {
 
             // skipping referenced features. hope this is fine..
             if (allRefs.contains(feature.getId())) {
@@ -283,7 +308,10 @@ public class SosiReader implements Closeable {
     }
 
     public void close() throws IOException {
-        reader.close();
+        IOUtils.silentClose(reader, channel, raf);
+        if (deleteFileOnClose) {
+            file.delete();
+        }
     }
 
 }

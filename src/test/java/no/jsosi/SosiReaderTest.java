@@ -18,7 +18,7 @@ public class SosiReaderTest extends TestCase {
         File file = new File("src/test/resources/0219Adresser.SOS");
         assertTrue(file.canRead());
 
-        SosiReader r = new SosiReader(new FileInputStream(file));
+        SosiReader r = new SosiReader(file);
         assertEquals("EPSG:25833", r.getCrs());
         assertEquals(0.01, r.getXYFactor());
 
@@ -50,7 +50,7 @@ public class SosiReaderTest extends TestCase {
         File file = new File("src/test/resources/Vbase_02.SOS");
         assertTrue(file.canRead());
 
-        SosiReader r = new SosiReader(new FileInputStream(file));
+        SosiReader r = new SosiReader(file);
         assertEquals("EPSG:25833", r.getCrs());
 
         Feature f1 = r.nextFeature();
@@ -81,7 +81,7 @@ public class SosiReaderTest extends TestCase {
         File file = new File("src/test/resources/1421_Arealdekke.sos");
         assertTrue(file.canRead());
 
-        SosiReader r = new SosiReader(new FileInputStream(file));
+        SosiReader r = new SosiReader(file);
         assertEquals("EPSG:25832", r.getCrs());
 
         Feature f1 = r.nextFeature();
@@ -92,16 +92,23 @@ public class SosiReaderTest extends TestCase {
         assertTrue(f1.getGeometry().isValid());
 
         Feature f = null;
+        Feature f5763 = null;
         while ((f = r.nextFeature()) != null) {
+
+            if (f.getId().intValue() == 5763) {
+                f5763 = f;
+            }
+
             if (f.getGeometryType() != GeometryType.KURVE) {
                 continue;
             }
             String objtype = (String) f.get("OBJTYPE");
             assertNotNull(objtype);
             assertFalse(objtype.endsWith("grense"));
+
         }
 
-        Feature f5763 = r.getFeature(5763);
+        assertNotNull(f5763);
         assertEquals(5763, f5763.getId().intValue());
         assertEquals("Innsjø", f5763.get("OBJTYPE"));
         assertTrue(f5763.getGeometry() instanceof Polygon);
@@ -111,9 +118,9 @@ public class SosiReaderTest extends TestCase {
     }
 
     public void testNavnISO() throws IOException {
-        File filei = new File("src/test/resources/1421_Navn_iso.sos");
-        assertTrue(filei.canRead());
-        SosiReader ri = new SosiReader(new FileInputStream(filei));
+        File file = new File("src/test/resources/1421_Navn_iso.sos");
+        assertTrue(file.canRead());
+        SosiReader ri = new SosiReader(file);
         assertEquals("EPSG:25832", ri.getCrs());
 
         Feature fi = null;
@@ -124,5 +131,14 @@ public class SosiReaderTest extends TestCase {
         }
         ri.close();
     }
+    
+    public void testInputStream() throws IOException {
+        File file = new File("src/test/resources/1421_Navn_iso.sos");
+        assertTrue(file.canRead());
+        SosiReader ri = new SosiReader(new FileInputStream(file));
+        assertEquals("EPSG:25832", ri.getCrs());
+        ri.close();
+    }
+
 
 }

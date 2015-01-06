@@ -43,11 +43,11 @@ public class Ref {
     }
     
     List<Coordinate> getCoordinates(SosiReader reader) {
-        Feature feature = reader.getFeature(getId());
+        List<Coordinate> coords = reader.getKurve(getId());
         if (isForward()) {
-            return feature.getCoordinates();
+            return coords;
         } else {
-            List<Coordinate> cs = new ArrayList<Coordinate>(feature.getCoordinates());
+            List<Coordinate> cs = new ArrayList<Coordinate>(coords);
             Collections.reverse(cs);
             return Collections.unmodifiableList(cs);
         }
