@@ -131,7 +131,7 @@ public class SosiReaderTest extends TestCase {
         }
         ri.close();
     }
-    
+
     public void testInputStream() throws IOException {
         File file = new File("src/test/resources/1421_Navn_iso.sos");
         assertTrue(file.canRead());
@@ -145,6 +145,5 @@ public class SosiReaderTest extends TestCase {
         assertEquals(1f, ri.getProgress(), 0.001f);
         ri.close();
     }
-
 
 }

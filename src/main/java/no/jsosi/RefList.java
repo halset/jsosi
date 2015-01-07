@@ -1,5 +1,6 @@
 package no.jsosi;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashSet;
@@ -67,7 +68,7 @@ class RefList {
         return Collections.unmodifiableSet(refs);
     }
 
-    Geometry createGeometry(SosiReader reader) {
+    Geometry createGeometry(SosiReader reader) throws IOException {
         try {
             LinearRing shell = createRing(reader, list.get(0));
             List<LinearRing> holes = new ArrayList<LinearRing>();
@@ -81,7 +82,7 @@ class RefList {
         }
     }
 
-    private static LinearRing createRing(SosiReader reader, List<Ref> refs) {
+    private static LinearRing createRing(SosiReader reader, List<Ref> refs) throws IOException {
         List<Coordinate> cs = new ArrayList<Coordinate>();
         for (Ref ref : refs) {
             cs.addAll(ref.getCoordinates(reader));

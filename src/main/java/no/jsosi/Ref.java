@@ -1,5 +1,6 @@
 package no.jsosi;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -42,7 +43,7 @@ public class Ref {
         return forward;
     }
     
-    List<Coordinate> getCoordinates(SosiReader reader) {
+    List<Coordinate> getCoordinates(SosiReader reader) throws IOException {
         List<Coordinate> coords = reader.getKurve(getId());
         if (isForward()) {
             return coords;

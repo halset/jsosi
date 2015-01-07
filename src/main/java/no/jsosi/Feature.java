@@ -1,8 +1,7 @@
 package no.jsosi;
 
-import java.util.Arrays;
+import java.io.IOException;
 import java.util.Collections;
-import java.util.List;
 import java.util.Map;
 
 import com.vividsolutions.jts.geom.Coordinate;
@@ -43,7 +42,7 @@ public class Feature {
         return geometryType;
     }
 
-    public Geometry getGeometry() {
+    public Geometry getGeometry() throws IOException {
         if (geometryType == GeometryType.FLATE) {
             return refs.createGeometry(reader);
         } else {
@@ -51,12 +50,8 @@ public class Feature {
         }
     }
 
-    public int getCoordinateCount() {
+    int getCoordinateCount() throws IOException {
         return getGeometry().getCoordinates().length;
-    }
-
-    public List<Coordinate> getCoordinates() {
-        return Collections.unmodifiableList(Arrays.asList(coordinates));
     }
 
 }

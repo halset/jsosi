@@ -29,15 +29,13 @@ public class SosiReader implements Closeable {
     private final RandomAccessFile raf;
     private final FileChannel channel;
     private BufferedReader reader;
+    private RefIndex index;
 
     private int level;
     private String key;
     private String value;
     private String crs;
     private double xyfactor;
-
-    private final Set<Integer> allRefs = new HashSet<Integer>();
-    private final Map<Integer, List<Coordinate>> kurveById = new HashMap<>();
 
     private static final Set<String> HEADERS = Collections.unmodifiableSet(new HashSet<String>(
             Arrays.asList("TEGNSETT", "KOORDSYS", "ENHET")));
@@ -76,13 +74,7 @@ public class SosiReader implements Closeable {
 
         // need to parse all features as FLATE can reference KURVE later in the
         // file
-        Feature feature = null;
-        while ((feature = nextFeatureInternal()) != null) {
-            if (feature.getGeometryType() != GeometryType.KURVE) {
-                continue;
-            }
-            kurveById.put(feature.getId(), feature.getCoordinates());
-        }
+        index = new RefIndex(in, xyfactor);
 
         // spool back once more and read for real
         channel.position(0);
@@ -152,23 +144,19 @@ public class SosiReader implements Closeable {
                 RefList refList = currentRefs;
                 currentRefs = null;
 
-                if (refList != null) {
-                    allRefs.addAll(refList.getRefs());
-                }
-
                 return new Feature(this, previousFeatureId, previousGeometryType,
                         previousAttributes, previousCoordinates, refList);
 
             default:
 
                 if ("NØ".equals(key)) {
-                    readCoordinateLines(2);
+                    currentCoordinates.addAll(readCoordinateLines(reader, xyfactor, 2));
                 } else if ("NØH".equals(key)) {
-                    readCoordinateLines(3);
+                    currentCoordinates.addAll(readCoordinateLines(reader, xyfactor, 3));
                 } else if ("REF".equals(key)) {
                     currentRefs = new RefList();
                     currentRefs.add(value);
-                    readRefs();
+                    readRefs(reader, currentRefs);
                 } else {
                     currentAttributes.put(key, value);
                 }
@@ -179,8 +167,10 @@ public class SosiReader implements Closeable {
         return null;
     }
 
-    private void readCoordinateLines(int dim) throws IOException {
+    static List<Coordinate> readCoordinateLines(BufferedReader reader, double xyfactor, int dim) throws IOException {
 
+        List<Coordinate> coords = new ArrayList<>();
+        
         reader.mark(100);
         while (true) {
             String line = reader.readLine();
@@ -205,13 +195,15 @@ public class SosiReader implements Closeable {
             Coordinate coord = new Coordinate(Double.parseDouble(tokens[1]) * xyfactor,
                     Double.parseDouble(tokens[0]) * xyfactor);
 
-            currentCoordinates.add(coord);
+            coords.add(coord);
 
             reader.mark(100);
         }
+        
+        return coords;
     }
 
-    private void readRefs() throws IOException {
+    static void readRefs(BufferedReader reader, RefList refs) throws IOException {
         reader.mark(100);
         while (true) {
             String line = reader.readLine();
@@ -219,7 +211,7 @@ public class SosiReader implements Closeable {
                 reader.reset();
                 break;
             }
-            currentRefs.add(line);
+            refs.add(line);
             reader.mark(100);
         }
     }
@@ -286,8 +278,8 @@ public class SosiReader implements Closeable {
         return xyfactor;
     }
 
-    List<Coordinate> getKurve(Integer id) {
-        return kurveById.get(id);
+    List<Coordinate> getKurve(Integer id) throws IOException {
+        return index.getCoordinates(id);
     }
 
     public Feature nextFeature() throws IOException {
@@ -295,7 +287,7 @@ public class SosiReader implements Closeable {
         while ((feature = nextFeatureInternal()) != null) {
 
             // skipping referenced features. hope this is fine..
-            if (allRefs.contains(feature.getId())) {
+            if (index.isRef(feature.getId())) {
                 String objtype = (String) feature.get("OBJTYPE");
                 if (objtype != null && objtype.endsWith("grense")) {
                     continue;
@@ -312,7 +304,7 @@ public class SosiReader implements Closeable {
     }
 
     public void close() throws IOException {
-        IOUtils.silentClose(reader, channel, raf);
+        IOUtils.silentClose(reader, channel, raf, index);
         if (deleteFileOnClose) {
             file.delete();
         }
