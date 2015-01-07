@@ -300,7 +300,7 @@ public class SosiReader implements Closeable {
     }
     
     public float getProgress() throws IOException {
-        return raf.getFilePointer() / raf.length();
+        return (float) raf.getFilePointer() / (float) raf.length();
     }
 
     public void close() throws IOException {
