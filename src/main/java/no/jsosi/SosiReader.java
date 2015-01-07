@@ -306,6 +306,10 @@ public class SosiReader implements Closeable {
         }
         return null;
     }
+    
+    public float getProgress() throws IOException {
+        return raf.getFilePointer() / raf.length();
+    }
 
     public void close() throws IOException {
         IOUtils.silentClose(reader, channel, raf);

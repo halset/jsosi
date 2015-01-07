@@ -137,6 +137,12 @@ public class SosiReaderTest extends TestCase {
         assertTrue(file.canRead());
         SosiReader ri = new SosiReader(new FileInputStream(file));
         assertEquals("EPSG:25832", ri.getCrs());
+        assertEquals(0f, ri.getProgress(), 0.001f);
+        Feature fi = null;
+        while ((fi = ri.nextFeature()) != null) {
+            assertNotNull(fi);
+        }
+        assertEquals(1f, ri.getProgress(), 0.001f);
         ri.close();
     }
 
