@@ -3,6 +3,7 @@ package no.jsosi;
 import java.io.BufferedReader;
 import java.io.Closeable;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.RandomAccessFile;
@@ -16,6 +17,9 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
+import org.apache.commons.io.ByteOrderMark;
+import org.apache.commons.io.input.BOMInputStream;
 
 import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.GeometryFactory;
@@ -43,8 +47,21 @@ public class SosiReader implements Closeable {
     public SosiReader(File in) throws IOException {
 
         this.file = in;
+        
+        // find BOM
+        int bomLength = 0;
+        BOMInputStream bis = null;
+        try {
+            bis = new BOMInputStream(new FileInputStream(in));
+            ByteOrderMark bom = bis.getBOM();
+            bomLength = bom == null ? 0 : bom.length();
+        } finally {
+            IOUtils.silentClose(bis);
+        }
+        
         this.raf = new RandomAccessFile(in, "r");
         this.channel = raf.getChannel();
+        this.channel.position(bomLength);
 
         // reader character set from head
         reader = new BufferedReader(Channels.newReader(channel, "ISO-8859-1"));
@@ -68,7 +85,7 @@ public class SosiReader implements Closeable {
         xyfactor = Double.parseDouble(head.get("ENHET"));
 
         // spool back and read with proper character set.
-        channel.position(0);
+        channel.position(bomLength);
         String characterSet = Tegnsett.getCharsetForTegnsett(head.get("TEGNSETT"));
         reader = new BufferedReader(Channels.newReader(channel, characterSet));
 
@@ -77,11 +94,11 @@ public class SosiReader implements Closeable {
         index = new RefIndex(in, xyfactor);
 
         // spool back once more and read for real
-        channel.position(0);
+        channel.position(bomLength);
         reader = new BufferedReader(Channels.newReader(channel, characterSet));
 
     }
-
+    
     /**
      * {@link SosiReader} operate on file to save memory while handling KURVE
      * references, so this constructor copy the {@link InputStream} to a
