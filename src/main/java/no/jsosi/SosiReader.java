@@ -90,7 +90,7 @@ public class SosiReader implements Closeable {
         String characterSet = Tegnsett.getCharsetForTegnsett(head.get("TEGNSETT"));
         reader = new BufferedReader(Channels.newReader(channel, characterSet));
         
-        // extra read to handle files marked as UTF-8, but in fact ISO-8859-1. this is pretty stupid.
+        // some files are ISO-8859-1, but marked as UTF-8 :(
         if ("UTF-8".equals(characterSet)) {
             try {
                 while (reader.readLine() != null) {
@@ -98,9 +98,9 @@ public class SosiReader implements Closeable {
             } catch (MalformedInputException e) {
                 characterSet = "ISO-8859-1";
             }
+            channel.position(bomLength);
+            reader = new BufferedReader(Channels.newReader(channel, characterSet));
         }
-        channel.position(bomLength);
-        reader = new BufferedReader(Channels.newReader(channel, characterSet));
 
         // need to parse all features as FLATE can reference KURVE later in the
         // file
