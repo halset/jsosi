@@ -174,15 +174,28 @@ public class SosiReaderTest extends TestCase {
         int count = 0;
         while ((fi = ri.nextFeature()) != null) {
             assertNotNull(fi);
-            try {
-                fi.getGeometry();
-                count++;
-            } catch (RuntimeException e) {
-                fail("could not get geometry for " + fi.getAttributeMap());
-            }
+            assertNotNull(fi.getGeometry());
+            count++;
         }
         assertEquals(5557, count);
         ri.close();
     }
+    
+    public void testISOUTF8() throws IOException {
+        File file = new File("src/test/resources/ISO_Navn_utf8.sos");
+        assertTrue(file.canRead());
+        SosiReader ri = new SosiReader(file);
+        assertEquals("EPSG:25833", ri.getCrs());
+        Feature fi = null;
+        int count = 0;
+        while ((fi = ri.nextFeature()) != null) {
+            assertNotNull(fi);
+            assertNotNull(fi.getGeometry());
+            count++;
+        }
+        assertEquals(2916, count);
+        ri.close();
+    }
+
 
 }

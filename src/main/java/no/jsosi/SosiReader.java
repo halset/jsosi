@@ -9,6 +9,7 @@ import java.io.InputStream;
 import java.io.RandomAccessFile;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
+import java.nio.charset.MalformedInputException;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -87,6 +88,18 @@ public class SosiReader implements Closeable {
         // spool back and read with proper character set.
         channel.position(bomLength);
         String characterSet = Tegnsett.getCharsetForTegnsett(head.get("TEGNSETT"));
+        reader = new BufferedReader(Channels.newReader(channel, characterSet));
+        
+        // extra read to handle files marked as UTF-8, but in fact ISO-8859-1. this is pretty stupid.
+        if ("UTF-8".equals(characterSet)) {
+            try {
+                while (reader.readLine() != null) {
+                }
+            } catch (MalformedInputException e) {
+                characterSet = "ISO-8859-1";
+            }
+        }
+        channel.position(bomLength);
         reader = new BufferedReader(Channels.newReader(channel, characterSet));
 
         // need to parse all features as FLATE can reference KURVE later in the
