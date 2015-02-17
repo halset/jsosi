@@ -187,7 +187,7 @@ public class SosiReader implements Closeable {
                     currentRefs = new RefList();
                     currentRefs.add(value);
                     readRefs(reader, currentRefs);
-                } else {
+                } else if (key != null && key.length() > 0 && value != null) {
                     currentAttributes.put(key, value);
                 }
 

@@ -5,6 +5,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 
 import junit.framework.TestCase;
 
@@ -194,6 +195,34 @@ public class SosiReaderTest extends TestCase {
             count++;
         }
         assertEquals(2916, count);
+        ri.close();
+    }
+    
+    public void testEmptyLine() throws IOException {
+        File file = new File("src/test/resources/0633_Navn_utf8.sos");
+        assertTrue(file.canRead());
+        SosiReader ri = new SosiReader(file);
+        assertEquals("EPSG:25833", ri.getCrs());
+        Feature fi = null;
+        int count = 0;
+        while ((fi = ri.nextFeature()) != null) {
+            assertNotNull(fi);
+            assertNotNull(fi.getGeometry());
+            
+            for (Map.Entry<String, Object> e : fi.getAttributeMap().entrySet()) {
+                String key = e.getKey();
+                if ("SSR".equals(key)) {
+                    continue;
+                }
+                assertNotNull("feature should not have null key. " + fi.getAttributeMap().toString(), key);
+                assertTrue("feature should not have empty key. " + fi.getAttributeMap().toString(), key.length() > 0);
+                assertNotNull("key '" + key + "' should not have null value", e.getValue());
+            }
+            
+            
+            count++;
+        }
+        assertEquals(3844, count);
         ri.close();
     }
 
