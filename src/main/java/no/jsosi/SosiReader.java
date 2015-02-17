@@ -219,6 +219,10 @@ public class SosiReader implements Closeable {
                     continue;
                 }
             }
+            
+            if (line.length() == 0) {
+                continue;
+            }
 
             String[] tokens = line.split(" ");
 
