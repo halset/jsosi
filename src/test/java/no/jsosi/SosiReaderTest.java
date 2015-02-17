@@ -225,6 +225,28 @@ public class SosiReaderTest extends TestCase {
         assertEquals(3844, count);
         ri.close();
     }
+    
+    public void testMissingGeometry() throws IOException {
+        File file = new File("src/test/resources/0540_Navn_utf8.sos");
+        assertTrue(file.canRead());
+        SosiReader ri = new SosiReader(file);
+        assertEquals("EPSG:25833", ri.getCrs());
+        Feature fi = null;
+        int count = 0;
+        while ((fi = ri.nextFeature()) != null) {
+            assertNotNull(fi);
+            assertNotNull(fi.getGeometry());
+            if ("Fønhuskoia".equals(fi.get("STRENG"))) {
+                assertTrue(fi.getGeometry().isEmpty());
+            } else {
+                assertFalse(fi.getGeometry().isEmpty());
+            }
+            count++;
+        }
+        assertEquals(2304, count);
+        ri.close();
+    }
+
 
 
 }

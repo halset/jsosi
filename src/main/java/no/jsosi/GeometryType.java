@@ -11,6 +11,9 @@ public enum GeometryType {
     public Geometry createGeometry(GeometryFactory gf, Coordinate[] coordinates) {
         switch (this) {
         case PUNKT:
+            if (coordinates.length == 0) {
+                return gf.createGeometryCollection(new Geometry[0]);
+            }
             return gf.createPoint(coordinates[0]);
         case KURVE:
             return gf.createLineString(coordinates);
@@ -19,6 +22,9 @@ public enum GeometryType {
         case FLATE:
             return gf.createPolygon(coordinates);
         case TEKST:
+            if (coordinates.length == 0) {
+                return gf.createGeometryCollection(new Geometry[0]);
+            }
             return gf.createPoint(coordinates[0]);
         }
         return null;
