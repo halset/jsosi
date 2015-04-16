@@ -136,7 +136,7 @@ public class SosiReader implements Closeable {
     private List<Coordinate> currentCoordinates = new ArrayList<Coordinate>();
     private RefList currentRefs = null;
 
-    private Feature nextFeatureInternal() throws IOException {
+    public Feature nextFeature() throws IOException {
         while (readLine()) {
             switch (level) {
             case 1:
@@ -316,23 +316,6 @@ public class SosiReader implements Closeable {
         return index.getCoordinates(id);
     }
 
-    public Feature nextFeature() throws IOException {
-        Feature feature = null;
-        while ((feature = nextFeatureInternal()) != null) {
-
-            // skipping referenced features. hope this is fine..
-            if (index.isRef(feature.getId())) {
-                String objtype = (String) feature.get("OBJTYPE");
-                if (objtype != null && objtype.endsWith("grense")) {
-                    continue;
-                }
-            }
-
-            return feature;
-        }
-        return null;
-    }
-    
     public float getProgress() throws IOException {
         return (float) raf.getFilePointer() / (float) raf.length();
     }

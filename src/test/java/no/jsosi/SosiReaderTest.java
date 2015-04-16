@@ -4,8 +4,10 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import junit.framework.TestCase;
 
@@ -92,9 +94,17 @@ public class SosiReaderTest extends TestCase {
         assertTrue(f1.getGeometry() instanceof Polygon);
         assertTrue(f1.getGeometry().isValid());
 
+        int count = 0;
+        Set<String> objtypes = new HashSet<String>();
+        
         Feature f = null;
         Feature f5763 = null;
         while ((f = r.nextFeature()) != null) {
+            String objtype = (String) f.get("OBJTYPE");
+            assertNotNull(objtype);
+            
+            count++;
+            objtypes.add(objtype);
 
             if (f.getId().intValue() == 5763) {
                 f5763 = f;
@@ -103,10 +113,6 @@ public class SosiReaderTest extends TestCase {
             if (f.getGeometryType() != GeometryType.KURVE) {
                 continue;
             }
-            String objtype = (String) f.get("OBJTYPE");
-            assertNotNull(objtype);
-            assertFalse(objtype.endsWith("grense"));
-
         }
 
         assertNotNull(f5763);
@@ -114,6 +120,9 @@ public class SosiReaderTest extends TestCase {
         assertEquals("Innsjø", f5763.get("OBJTYPE"));
         assertTrue(f5763.getGeometry() instanceof Polygon);
         assertTrue(f5763.getGeometry().isValid());
+        
+        assertEquals(21313, count);
+        assertEquals(27, objtypes.size());
 
         r.close();
     }
@@ -247,6 +256,23 @@ public class SosiReaderTest extends TestCase {
         ri.close();
     }
 
-
+    public void testEnheterGrunnkrets() throws Exception {
+        File file = new File("src/test/resources/STAT_enheter_grunnkretser.sos");
+        assertTrue(file.canRead());
+        SosiReader ri = new SosiReader(file);
+        assertEquals("EPSG:25833", ri.getCrs());
+        Feature fi = null;
+        int count = 0;
+        Set<String> objtypes = new HashSet<String>();
+        while ((fi = ri.nextFeature()) != null) {
+            assertNotNull(fi);
+            assertNotNull(fi.getGeometry());
+            count++;
+            objtypes.add(fi.get("OBJTYPE").toString());
+        }
+        assertEquals(8, objtypes.size());
+        assertEquals(79724, count);
+        ri.close();
+    }
 
 }
