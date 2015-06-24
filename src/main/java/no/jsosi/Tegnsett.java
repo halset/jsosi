@@ -13,7 +13,7 @@ public class Tegnsett {
         }
 
         // fake this one for now. sorry
-        if (characterSet.equals("ISO-8859-10")) {
+        if (characterSet.equals("ISO-8859-10") || characterSet.equalsIgnoreCase("ANSI")) {
             characterSet = "ISO-8859-1";
         }
         
