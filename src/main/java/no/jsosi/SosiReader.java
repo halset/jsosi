@@ -23,6 +23,7 @@ import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.input.BOMInputStream;
 
 import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.GeometryFactory;
 
 public class SosiReader implements Closeable {
@@ -41,9 +42,10 @@ public class SosiReader implements Closeable {
     private String value;
     private String crs;
     private double xyfactor;
+    private Envelope bounds;
 
     private static final Set<String> HEADERS = Collections.unmodifiableSet(new HashSet<String>(
-            Arrays.asList("TEGNSETT", "KOORDSYS", "ENHET")));
+            Arrays.asList("TEGNSETT", "KOORDSYS", "ENHET", "MIN-NØ", "MAX-NØ")));
     
     public SosiReader(File in) throws IOException {
 
@@ -84,6 +86,18 @@ public class SosiReader implements Closeable {
         crs = Koordsys.getEpsgForKoordsys(Integer.parseInt(values[0]));
 
         xyfactor = Double.parseDouble(head.get("ENHET"));
+        
+        //RegEx for malformed files with multiple spaces between values
+        String[] minNEvalues = head.get("MIN-NØ").trim().split("\\s+");
+        String[] maxNEvalues = head.get("MAX-NØ").trim().split("\\s+");
+        Coordinate minNE = new Coordinate(
+        		Double.parseDouble(minNEvalues[0]), 
+        		Double.parseDouble(minNEvalues[1]));
+        Coordinate maxNE = new Coordinate(
+        		Double.parseDouble(maxNEvalues[0]), 
+        		Double.parseDouble(maxNEvalues[1]));
+        
+        bounds = new Envelope(minNE, maxNE);
 
         // spool back and read with proper character set.
         channel.position(bomLength);
@@ -312,7 +326,11 @@ public class SosiReader implements Closeable {
         return xyfactor;
     }
 
-    List<Coordinate> getKurve(Integer id) throws IOException {
+    public Envelope getBounds() {
+		return bounds;
+	}
+
+	List<Coordinate> getKurve(Integer id) throws IOException {
         return index.getCoordinates(id);
     }
 
