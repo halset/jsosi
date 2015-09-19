@@ -11,6 +11,7 @@ import java.util.Set;
 
 import junit.framework.TestCase;
 
+import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.geom.Polygon;
@@ -24,6 +25,7 @@ public class SosiReaderTest extends TestCase {
         SosiReader r = new SosiReader(file);
         assertEquals("EPSG:25833", r.getCrs());
         assertEquals(0.01, r.getXYFactor());
+        assertEquals(new Envelope(6640758, 6663653, 239438, 256376), r.getBounds());
 
         List<Feature> features = new ArrayList<Feature>();
         Feature feature;
@@ -55,6 +57,7 @@ public class SosiReaderTest extends TestCase {
 
         SosiReader r = new SosiReader(file);
         assertEquals("EPSG:25833", r.getCrs());
+        assertEquals(new Envelope(6601345, 6724088, 238657, 326808), r.getBounds());
 
         Feature f1 = r.nextFeature();
         assertEquals("P V 99834", f1.get("VNR"));
@@ -86,6 +89,7 @@ public class SosiReaderTest extends TestCase {
 
         SosiReader r = new SosiReader(file);
         assertEquals("EPSG:25832", r.getCrs());
+        assertEquals(new Envelope(6724129, 6774390, 374177, 433608), r.getBounds());
 
         Feature f1 = r.nextFeature();
         assertEquals("10000101", f1.get("OPPDATERINGSDATO"));
@@ -132,6 +136,7 @@ public class SosiReaderTest extends TestCase {
         assertTrue(file.canRead());
         SosiReader ri = new SosiReader(file);
         assertEquals("EPSG:25832", ri.getCrs());
+        assertEquals(new Envelope(6714086, 6784443, 362296, 445490), ri.getBounds());
 
         Feature fi = null;
         while ((fi = ri.nextFeature()) != null) {
@@ -147,6 +152,7 @@ public class SosiReaderTest extends TestCase {
         assertTrue(file.canRead());
         SosiReader ri = new SosiReader(new FileInputStream(file));
         assertEquals("EPSG:25832", ri.getCrs());
+        assertEquals(new Envelope(6714086, 6784443, 362296, 445490), ri.getBounds());
         Feature fi = null;
         while ((fi = ri.nextFeature()) != null) {
             assertNotNull(fi);
@@ -160,6 +166,7 @@ public class SosiReaderTest extends TestCase {
         SosiReader ri = new SosiReader(file);
         assertEquals("EPSG:25832", ri.getCrs());
         assertEquals(0f, ri.getProgress(), 0.0001f);
+        assertEquals(new Envelope(6714086, 6784443, 362296, 445490), ri.getBounds());
 
         for (int i = 0; i < 1500; i++) {
             assertNotNull(ri.nextFeature());
@@ -180,6 +187,7 @@ public class SosiReaderTest extends TestCase {
         assertTrue(file.canRead());
         SosiReader ri = new SosiReader(file);
         assertEquals("EPSG:25833", ri.getCrs());
+        assertEquals(new Envelope(6447273, 7941195, -80700, 1108962), ri.getBounds());
         Feature fi = null;
         int count = 0;
         while ((fi = ri.nextFeature()) != null) {
@@ -196,6 +204,7 @@ public class SosiReaderTest extends TestCase {
         assertTrue(file.canRead());
         SosiReader ri = new SosiReader(file);
         assertEquals("EPSG:25833", ri.getCrs());
+        assertEquals(new Envelope(6577658, 6651204, 24803, 92200), ri.getBounds());
         Feature fi = null;
         int count = 0;
         while ((fi = ri.nextFeature()) != null) {
@@ -212,6 +221,7 @@ public class SosiReaderTest extends TestCase {
         assertTrue(file.canRead());
         SosiReader ri = new SosiReader(file);
         assertEquals("EPSG:25833", ri.getCrs());
+        assertEquals(new Envelope(6663986, 6735573, 63576, 198523), ri.getBounds());
         Feature fi = null;
         int count = 0;
         while ((fi = ri.nextFeature()) != null) {
@@ -240,6 +250,7 @@ public class SosiReaderTest extends TestCase {
         assertTrue(file.canRead());
         SosiReader ri = new SosiReader(file);
         assertEquals("EPSG:25833", ri.getCrs());
+        assertEquals(new Envelope(6703549, 6771747, 179199, 236843), ri.getBounds());
         Feature fi = null;
         int count = 0;
         while ((fi = ri.nextFeature()) != null) {
@@ -261,6 +272,7 @@ public class SosiReaderTest extends TestCase {
         assertTrue(file.canRead());
         SosiReader ri = new SosiReader(file);
         assertEquals("EPSG:25833", ri.getCrs());
+        assertEquals(new Envelope(6426048, 7962744, -99553, 1121942), ri.getBounds());
         Feature fi = null;
         int count = 0;
         Set<String> objtypes = new HashSet<String>();

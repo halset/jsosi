@@ -23,6 +23,7 @@ import org.apache.commons.io.ByteOrderMark;
 import org.apache.commons.io.input.BOMInputStream;
 
 import com.vividsolutions.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.GeometryFactory;
 
 public class SosiReader implements Closeable {
@@ -41,9 +42,10 @@ public class SosiReader implements Closeable {
     private String value;
     private String crs;
     private double xyfactor;
+    private Envelope bounds;
 
     private static final Set<String> HEADERS = Collections.unmodifiableSet(new HashSet<String>(
-            Arrays.asList("TEGNSETT", "KOORDSYS", "ENHET")));
+            Arrays.asList("TEGNSETT", "KOORDSYS", "ENHET", "MIN-NØ", "MAX-NØ")));
     
     public SosiReader(File in) throws IOException {
 
@@ -64,10 +66,31 @@ public class SosiReader implements Closeable {
         this.channel = raf.getChannel();
         this.channel.position(bomLength);
 
+        String initialCharacterSet = "ISO-8859-1"; //Common assumption
+        
         // reader character set from head
-        reader = new BufferedReader(Channels.newReader(channel, "ISO-8859-1"));
+        reader = new BufferedReader(Channels.newReader(channel, initialCharacterSet));
 
-        Map<String, String> head = new HashMap<String, String>();
+        Map<String, String> head = readHead();
+        String characterSet = findCharSet(bomLength, head);
+        if (!characterSet.equals(initialCharacterSet)) {
+        	head = readHead();
+        }
+
+        parseHead(head);        
+
+        // need to parse all features as FLATE can reference KURVE later in the
+        // file
+        index = new RefIndex(in, xyfactor);
+
+        // spool back once more and read for real
+        channel.position(bomLength);
+        reader = new BufferedReader(Channels.newReader(channel, characterSet));
+
+    }
+
+	private Map<String, String> readHead() throws IOException {
+		Map<String, String> head = new HashMap<String, String>();
         while (readLine()) {
             head.put(key, value);
 
@@ -79,15 +102,14 @@ public class SosiReader implements Closeable {
                 break;
             }
         }
+		return head;
+	}
 
-        String[] values = head.get("KOORDSYS").split(" ");
-        crs = Koordsys.getEpsgForKoordsys(Integer.parseInt(values[0]));
-
-        xyfactor = Double.parseDouble(head.get("ENHET"));
-
-        // spool back and read with proper character set.
+	private String findCharSet(int bomLength, Map<String, String> head) throws IOException {
+		String characterSet;
+		// spool back and read with proper character set.
         channel.position(bomLength);
-        String characterSet = Tegnsett.getCharsetForTegnsett(head.get("TEGNSETT"));
+        characterSet = Tegnsett.getCharsetForTegnsett(head.get("TEGNSETT"));
         reader = new BufferedReader(Channels.newReader(channel, characterSet));
         
         // some files are ISO-8859-1, but marked as UTF-8 :(
@@ -101,16 +123,27 @@ public class SosiReader implements Closeable {
             channel.position(bomLength);
             reader = new BufferedReader(Channels.newReader(channel, characterSet));
         }
+		return characterSet;
+	}
 
-        // need to parse all features as FLATE can reference KURVE later in the
-        // file
-        index = new RefIndex(in, xyfactor);
+	private void parseHead(Map<String, String> head) {
+		String[] values = head.get("KOORDSYS").split(" ");
+        crs = Koordsys.getEpsgForKoordsys(Integer.parseInt(values[0]));
 
-        // spool back once more and read for real
-        channel.position(bomLength);
-        reader = new BufferedReader(Channels.newReader(channel, characterSet));
-
-    }
+        xyfactor = Double.parseDouble(head.get("ENHET"));
+        
+        //RegEx for malformed files with multiple spaces between values
+        String[] minNEvalues = head.get("MIN-NØ").trim().split("\\s+");
+        String[] maxNEvalues = head.get("MAX-NØ").trim().split("\\s+");
+        Coordinate minNE = new Coordinate(
+        		Double.parseDouble(minNEvalues[0]), 
+        		Double.parseDouble(minNEvalues[1]));
+        Coordinate maxNE = new Coordinate(
+        		Double.parseDouble(maxNEvalues[0]), 
+        		Double.parseDouble(maxNEvalues[1]));
+        
+        bounds = new Envelope(minNE, maxNE);
+	}
     
     /**
      * {@link SosiReader} operate on file to save memory while handling KURVE
@@ -312,7 +345,11 @@ public class SosiReader implements Closeable {
         return xyfactor;
     }
 
-    List<Coordinate> getKurve(Integer id) throws IOException {
+    public Envelope getBounds() {
+		return bounds;
+	}
+
+	List<Coordinate> getKurve(Integer id) throws IOException {
         return index.getCoordinates(id);
     }
 
