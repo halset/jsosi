@@ -66,10 +66,31 @@ public class SosiReader implements Closeable {
         this.channel = raf.getChannel();
         this.channel.position(bomLength);
 
+        String initialCharacterSet = "ISO-8859-1"; //Common assumption
+        
         // reader character set from head
-        reader = new BufferedReader(Channels.newReader(channel, "ISO-8859-1"));
+        reader = new BufferedReader(Channels.newReader(channel, initialCharacterSet));
 
-        Map<String, String> head = new HashMap<String, String>();
+        Map<String, String> head = readHead();
+        String characterSet = findCharSet(bomLength, head);
+        if (!characterSet.equals(initialCharacterSet)) {
+        	head = readHead();
+        }
+
+        parseHead(head);        
+
+        // need to parse all features as FLATE can reference KURVE later in the
+        // file
+        index = new RefIndex(in, xyfactor);
+
+        // spool back once more and read for real
+        channel.position(bomLength);
+        reader = new BufferedReader(Channels.newReader(channel, characterSet));
+
+    }
+
+	private Map<String, String> readHead() throws IOException {
+		Map<String, String> head = new HashMap<String, String>();
         while (readLine()) {
             head.put(key, value);
 
@@ -81,8 +102,32 @@ public class SosiReader implements Closeable {
                 break;
             }
         }
+		return head;
+	}
 
-        String[] values = head.get("KOORDSYS").split(" ");
+	private String findCharSet(int bomLength, Map<String, String> head) throws IOException {
+		String characterSet;
+		// spool back and read with proper character set.
+        channel.position(bomLength);
+        characterSet = Tegnsett.getCharsetForTegnsett(head.get("TEGNSETT"));
+        reader = new BufferedReader(Channels.newReader(channel, characterSet));
+        
+        // some files are ISO-8859-1, but marked as UTF-8 :(
+        if ("UTF-8".equals(characterSet)) {
+            try {
+                while (reader.readLine() != null) {
+                }
+            } catch (MalformedInputException e) {
+                characterSet = "ISO-8859-1";
+            }
+            channel.position(bomLength);
+            reader = new BufferedReader(Channels.newReader(channel, characterSet));
+        }
+		return characterSet;
+	}
+
+	private void parseHead(Map<String, String> head) {
+		String[] values = head.get("KOORDSYS").split(" ");
         crs = Koordsys.getEpsgForKoordsys(Integer.parseInt(values[0]));
 
         xyfactor = Double.parseDouble(head.get("ENHET"));
@@ -98,33 +143,7 @@ public class SosiReader implements Closeable {
         		Double.parseDouble(maxNEvalues[1]));
         
         bounds = new Envelope(minNE, maxNE);
-
-        // spool back and read with proper character set.
-        channel.position(bomLength);
-        String characterSet = Tegnsett.getCharsetForTegnsett(head.get("TEGNSETT"));
-        reader = new BufferedReader(Channels.newReader(channel, characterSet));
-        
-        // some files are ISO-8859-1, but marked as UTF-8 :(
-        if ("UTF-8".equals(characterSet)) {
-            try {
-                while (reader.readLine() != null) {
-                }
-            } catch (MalformedInputException e) {
-                characterSet = "ISO-8859-1";
-            }
-            channel.position(bomLength);
-            reader = new BufferedReader(Channels.newReader(channel, characterSet));
-        }
-
-        // need to parse all features as FLATE can reference KURVE later in the
-        // file
-        index = new RefIndex(in, xyfactor);
-
-        // spool back once more and read for real
-        channel.position(bomLength);
-        reader = new BufferedReader(Channels.newReader(channel, characterSet));
-
-    }
+	}
     
     /**
      * {@link SosiReader} operate on file to save memory while handling KURVE
