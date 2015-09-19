@@ -346,7 +346,7 @@ public class SosiReader implements Closeable {
     }
 
     public Envelope getBounds() {
-		return bounds;
+		return new Envelope(bounds);
 	}
 
 	List<Coordinate> getKurve(Integer id) throws IOException {
