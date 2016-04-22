@@ -26,6 +26,10 @@ import com.vividsolutions.jts.geom.Coordinate;
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.GeometryFactory;
 
+/**
+ * 
+ * @see http://www.kartverket.no/globalassets/standard/sosi-standarden-del-1-og-2/sosi-standarden/del1_3_sosi_notasjon.pdf
+ */
 public class SosiReader implements Closeable {
 
     private GeometryFactory gf = new GeometryFactory();
@@ -165,12 +169,27 @@ public class SosiReader implements Closeable {
     private boolean head = false;
     private GeometryType currentGeometryType = null;
     private Integer currentFeatureId = null;
-    private Map<String, Object> currentAttributes = new HashMap<String, Object>();
-    private List<Coordinate> currentCoordinates = new ArrayList<Coordinate>();
+    private final HashMap<String, Object> currentAttributes = new HashMap<String, Object>();
+    private final List<Coordinate> currentCoordinates = new ArrayList<Coordinate>();
     private RefList currentRefs = null;
+    private String lastAttributeKey;
 
     public Feature nextFeature() throws IOException {
         while (readLine()) {
+
+            // special case for multiple line text attribute value
+            if (level == 0 && key.length() > 0 && key.startsWith(";")) {
+                Object prevValue = currentAttributes.get(lastAttributeKey);
+                if (prevValue != null && prevValue instanceof String) {
+                    String v = prevValue.toString() + "\n" + key.substring(1);
+                    if (v.startsWith("\"") && v.endsWith("\"")) {
+                        v = v.substring(1, v.length() - 1);
+                    }
+                    currentAttributes.put(lastAttributeKey, v);
+                }
+                continue;
+            }
+
             switch (level) {
             case 1:
                 if ("HODE".equals(key)) {
@@ -198,6 +217,7 @@ public class SosiReader implements Closeable {
 
                 currentAttributes.clear();
                 currentCoordinates.clear();
+                lastAttributeKey = null;
 
                 if (head) {
                     head = false;
@@ -220,8 +240,9 @@ public class SosiReader implements Closeable {
                     currentRefs = new RefList();
                     currentRefs.add(value);
                     readRefs(reader, currentRefs);
-                } else if (key != null && key.length() > 0 && value != null) {
+                } else if (key != null && key.length() > 0 && value != null && !key.startsWith(";")) {
                     currentAttributes.put(key, value);
+                    lastAttributeKey = key;
                 }
 
             }
@@ -293,7 +314,7 @@ public class SosiReader implements Closeable {
         if (line == null) {
             return false;
         }
-
+        
         int thisLevel = 0;
         for (int i = 0; i < line.length(); i++) {
             if (line.charAt(i) == '.') {
@@ -305,6 +326,13 @@ public class SosiReader implements Closeable {
 
         level = thisLevel;
         line = line.substring(level);
+        
+        // special case for text attribute value with multiple lines
+        if (line.length() > 0 && level == 0 && line.charAt(0) == ';') {
+            key = line;
+            value = null;
+            return true;
+        }
 
         int p = line.indexOf(' ');
         if (p > 0) {

@@ -4,17 +4,19 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-
-import junit.framework.TestCase;
+import java.util.zip.ZipInputStream;
 
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.geom.Polygon;
+
+import junit.framework.TestCase;
 
 public class SosiReaderTest extends TestCase {
 
@@ -285,6 +287,51 @@ public class SosiReaderTest extends TestCase {
         assertEquals(8, objtypes.size());
         assertEquals(79724, count);
         ri.close();
+    }
+    
+    public void testNRL() throws Exception {
+        File file = new File("src/test/resources/NRL080416.sos.zip");
+        assertTrue(file.canRead());
+
+        FileInputStream fis = null;
+        ZipInputStream zis = null;
+        SosiReader ri = null;
+
+        try {
+            fis = new FileInputStream(file);
+            zis = new ZipInputStream(fis);
+            assertNotNull(zis.getNextEntry());
+            ri = new SosiReader(zis);
+            assertEquals("EPSG:25833", ri.getCrs());
+            assertEquals(new Envelope(6161024, 8864310, -1021180, 1541478), ri.getBounds());
+            Feature fi = null;
+            int count = 0;
+            Set<String> objtypes = new HashSet<String>();
+            Set<String> keys = new HashSet<String>();
+            Map<Integer, Feature> featureById = new HashMap<>();
+            while ((fi = ri.nextFeature()) != null) {
+                assertNotNull(fi);
+                assertNotNull(fi.getGeometry());
+                count++;
+                objtypes.add(fi.get("OBJTYPE").toString());
+                keys.addAll(fi.getAttributeMap().keySet());
+                featureById.put(fi.getId(), fi);
+            }
+            assertEquals(3, objtypes.size());
+            assertEquals(318918, count);
+            assertFalse(keys.contains(";opp"));
+            assertFalse(keys.contains(";taubanen"));
+
+            Feature f1 = featureById.get(Integer.valueOf(318160));
+            assertNotNull(f1);
+            assertEquals("...AKILDE:NRL;...GKILDE:NRL;bardun festet i bakken og \nopp til kabel over dalen(spenn)",
+                    f1.get("INFORMASJON"));
+            
+            assertEquals("sjekk status og agl", featureById.get(Integer.valueOf(318844)).get("INFORMASJON"));
+
+        } finally {
+            IOUtils.silentClose(ri, zis, fis);
+        }
     }
 
 }
