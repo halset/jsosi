@@ -2,6 +2,7 @@ package no.jsosi;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 
 import com.vividsolutions.jts.geom.Coordinate;
@@ -13,7 +14,7 @@ public class Feature {
     private final Integer id;
     private final GeometryType geometryType;
     private final Coordinate[] coordinates;
-    private final Map<String, Object> attributes;
+    private final Map<String, Object> attributes = new HashMap<>();
     private final RefList refs;
 
     Feature(SosiReader reader, Integer id, GeometryType geometryType, Map<String, Object> attributes,
@@ -21,11 +22,21 @@ public class Feature {
         this.reader = reader;
         this.id = id;
         this.geometryType = geometryType;
-        this.attributes = attributes;
         this.coordinates = coordinates;
         this.refs = refs;
+        putAll(attributes);
+    }
+    
+    private void put(String key, Object value) {
+        attributes.putAll(LineMap.create(key, value));
     }
 
+    private void putAll(Map<String, Object> as) {
+        for (Map.Entry<String, Object> e : as.entrySet()) {
+            put(e.getKey(), e.getValue());
+        }
+    }
+    
     public Integer getId() {
         return id;
     }

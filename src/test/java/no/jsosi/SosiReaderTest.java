@@ -321,11 +321,16 @@ public class SosiReaderTest extends TestCase {
             assertEquals(318918, count);
             assertFalse(keys.contains(";opp"));
             assertFalse(keys.contains(";taubanen"));
+            assertFalse(keys.contains("En av 16 master. Se arkiv"));
+            assertEquals(keys.toString(), 51, keys.size());
 
             Feature f1 = featureById.get(Integer.valueOf(318160));
             assertNotNull(f1);
-            assertEquals("...AKILDE:NRL;...GKILDE:NRL;bardun festet i bakken og \nopp til kabel over dalen(spenn)",
-                    f1.get("INFORMASJON"));
+            assertFalse("...AKILDE:NRL;...GKILDE:NRL;bardun festet i bakken og \nopp til kabel over dalen(spenn)"
+                    .equals(f1.get("INFORMASJON")));
+            assertEquals("NRL", f1.get("AKILDE"));
+            assertEquals("NRL", f1.get("GKILDE"));
+            assertEquals("bardun festet i bakken og \nopp til kabel over dalen(spenn)", f1.get("INFORMASJON"));
             
             assertEquals("sjekk status og agl", featureById.get(Integer.valueOf(318844)).get("INFORMASJON"));
 
