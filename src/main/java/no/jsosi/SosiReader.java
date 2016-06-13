@@ -40,6 +40,7 @@ public class SosiReader implements Closeable {
     private final FileChannel channel;
     private BufferedReader reader;
     private RefIndex index;
+    private String characterSet;
 
     private int level;
     private String key;
@@ -76,7 +77,7 @@ public class SosiReader implements Closeable {
         reader = new BufferedReader(Channels.newReader(channel, initialCharacterSet));
 
         Map<String, String> head = readHead();
-        String characterSet = findCharSet(bomLength, head);
+        characterSet = findCharSet(bomLength, head);
         if (!characterSet.equals(initialCharacterSet)) {
         	head = readHead();
         }
@@ -378,7 +379,7 @@ public class SosiReader implements Closeable {
 	}
 
 	List<Coordinate> getKurve(Integer id) throws IOException {
-        return index.getCoordinates(id);
+        return index.getCoordinates(id, characterSet);
     }
 
     public float getProgress() throws IOException {

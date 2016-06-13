@@ -12,6 +12,7 @@ import java.util.Set;
 import java.util.zip.ZipInputStream;
 
 import com.vividsolutions.jts.geom.Envelope;
+import com.vividsolutions.jts.geom.Geometry;
 import com.vividsolutions.jts.geom.LineString;
 import com.vividsolutions.jts.geom.Point;
 import com.vividsolutions.jts.geom.Polygon;
@@ -337,6 +338,34 @@ public class SosiReaderTest extends TestCase {
         } finally {
             IOUtils.silentClose(ri, zis, fis);
         }
+    }
+    
+    public void testRadonAktsomhet() throws IOException {
+        File file = new File("src/test/resources/RadonAktsomhet.sos");
+        assertTrue(file.canRead());
+        SosiReader ri = new SosiReader(file);
+        assertEquals("EPSG:25833", ri.getCrs());
+        assertEquals(new Envelope(6636699, 6675271, 248151, 274432), ri.getBounds());
+        Feature fi = null;
+        int count = 0;
+        Set<String> objtypes = new HashSet<String>();
+        while ((fi = ri.nextFeature()) != null) {
+            assertNotNull(fi);
+            assertNotNull(fi.getGeometry());
+            Geometry geometry = fi.getGeometry();
+            if (geometry instanceof Polygon) {
+                Polygon p = (Polygon) geometry;
+                assertTrue("" + fi.getId(),  p.getExteriorRing().getNumPoints() >= 3);
+                for (int i = 0; i < p.getNumInteriorRing(); i++) {
+                    assertTrue(p.getInteriorRingN(i).getNumPoints() >= 3);
+                }
+            }
+            count++;
+            objtypes.add(fi.get("OBJTYPE").toString());
+        }
+        assertEquals(2, objtypes.size());
+        assertEquals(1792, count);
+        ri.close();
     }
 
 }

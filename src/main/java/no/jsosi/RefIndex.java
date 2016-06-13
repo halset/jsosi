@@ -112,7 +112,7 @@ class RefIndex implements Closeable {
         return posById.get(id);
     }
 
-    public List<Coordinate> getCoordinates(Integer id) throws IOException {
+    public List<Coordinate> getCoordinates(Integer id, String characterSet) throws IOException {
         Long position = position(id);
         if (position == null) {
             return null;
@@ -127,7 +127,7 @@ class RefIndex implements Closeable {
         channel.position(position.longValue());
 
         BufferedReader reader = null;
-        reader = new BufferedReader(Channels.newReader(channel, "ISO-8859-1"));
+        reader = new BufferedReader(Channels.newReader(channel, characterSet));
         String line = null;
         while ((line = reader.readLine()) != null) {
             if (line.startsWith("..NØH")) {
