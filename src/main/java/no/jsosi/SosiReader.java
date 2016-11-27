@@ -186,7 +186,7 @@ public class SosiReader implements Closeable {
                     if (v.startsWith("\"") && v.endsWith("\"")) {
                         v = v.substring(1, v.length() - 1);
                     }
-                    currentAttributes.put(lastAttributeKey, v);
+                    currentAttributes.put(lastAttributeKey, Value.value(v));
                 }
                 continue;
             }
@@ -203,7 +203,7 @@ public class SosiReader implements Closeable {
                 GeometryType previousGeometryType = currentGeometryType;
                 Integer previousFeatureId = currentFeatureId;
 
-                Map<String, Object> previousAttributes = new HashMap<String, Object>(
+                Map<String, Object> previousAttributes = new HashMap<>(
                         currentAttributes);
                 Coordinate[] previousCoordinates = currentCoordinates
                         .toArray(new Coordinate[currentCoordinates.size()]);
@@ -242,7 +242,7 @@ public class SosiReader implements Closeable {
                     currentRefs.add(value);
                     readRefs(reader, currentRefs);
                 } else if (key != null && key.length() > 0 && value != null && !key.startsWith(";")) {
-                    currentAttributes.put(key, value);
+                    currentAttributes.put(key, Value.value(value));
                     lastAttributeKey = key;
                 }
 

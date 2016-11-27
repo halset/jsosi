@@ -42,7 +42,7 @@ public class SosiReaderTest extends TestCase {
         assertEquals("Hans Hanssens vei !nocomment", f.get("GATENAVN"));
         assertEquals("SNARØYA", f.get("POSTNAVN"));
         assertEquals("0219", f.get("KOMM"));
-        assertEquals("4", f.get("HUSNR"));
+        assertEquals(Integer.valueOf(4), f.get("HUSNR"));
         assertNull(f.get("NØ"));
         assertNotNull(f.getGeometry());
         assertTrue(f.getGeometry() instanceof Point);
@@ -95,7 +95,7 @@ public class SosiReaderTest extends TestCase {
         assertEquals(new Envelope(6724129, 6774390, 374177, 433608), r.getBounds());
 
         Feature f1 = r.nextFeature();
-        assertEquals("10000101", f1.get("OPPDATERINGSDATO"));
+        assertEquals(Integer.valueOf(10000101), f1.get("OPPDATERINGSDATO"));
         assertEquals("ÅpentOmråde", f1.get("OBJTYPE"));
         assertNull(f1.get("GATENAVN"));
         assertTrue(f1.getGeometry() instanceof Polygon);
@@ -103,13 +103,13 @@ public class SosiReaderTest extends TestCase {
 
         int count = 0;
         Set<String> objtypes = new HashSet<String>();
-        
+
         Feature f = null;
         Feature f5763 = null;
         while ((f = r.nextFeature()) != null) {
             String objtype = (String) f.get("OBJTYPE");
             assertNotNull(objtype);
-            
+
             count++;
             objtypes.add(objtype);
 
@@ -127,7 +127,7 @@ public class SosiReaderTest extends TestCase {
         assertEquals("Innsjø", f5763.get("OBJTYPE"));
         assertTrue(f5763.getGeometry() instanceof Polygon);
         assertTrue(f5763.getGeometry().isValid());
-        
+
         assertEquals(21313, count);
         assertEquals(27, objtypes.size());
 
@@ -201,7 +201,7 @@ public class SosiReaderTest extends TestCase {
         assertEquals(5557, count);
         ri.close();
     }
-    
+
     public void testISOUTF8() throws IOException {
         File file = new File("src/test/resources/ISO_Navn_utf8.sos");
         assertTrue(file.canRead());
@@ -218,7 +218,7 @@ public class SosiReaderTest extends TestCase {
         assertEquals(2916, count);
         ri.close();
     }
-    
+
     public void testEmptyLine() throws IOException {
         File file = new File("src/test/resources/0633_Navn_utf8.sos");
         assertTrue(file.canRead());
@@ -230,7 +230,7 @@ public class SosiReaderTest extends TestCase {
         while ((fi = ri.nextFeature()) != null) {
             assertNotNull(fi);
             assertNotNull(fi.getGeometry());
-            
+
             for (Map.Entry<String, Object> e : fi.getAttributeMap().entrySet()) {
                 String key = e.getKey();
                 if ("SSR".equals(key)) {
@@ -240,14 +240,13 @@ public class SosiReaderTest extends TestCase {
                 assertTrue("feature should not have empty key. " + fi.getAttributeMap().toString(), key.length() > 0);
                 assertNotNull("key '" + key + "' should not have null value", e.getValue());
             }
-            
-            
+
             count++;
         }
         assertEquals(3844, count);
         ri.close();
     }
-    
+
     public void testMissingGeometry() throws IOException {
         File file = new File("src/test/resources/0540_Navn_utf8.sos");
         assertTrue(file.canRead());
@@ -289,7 +288,7 @@ public class SosiReaderTest extends TestCase {
         assertEquals(79724, count);
         ri.close();
     }
-    
+
     public void testNRL() throws Exception {
         File file = new File("src/test/resources/NRL080416.sos.zip");
         assertTrue(file.canRead());
@@ -332,14 +331,14 @@ public class SosiReaderTest extends TestCase {
             assertEquals("NRL", f1.get("AKILDE"));
             assertEquals("NRL", f1.get("GKILDE"));
             assertEquals("bardun festet i bakken og \nopp til kabel over dalen(spenn)", f1.get("INFORMASJON"));
-            
+
             assertEquals("sjekk status og agl", featureById.get(Integer.valueOf(318844)).get("INFORMASJON"));
 
         } finally {
             IOUtils.silentClose(ri, zis, fis);
         }
     }
-    
+
     public void testRadonAktsomhet() throws IOException {
         File file = new File("src/test/resources/RadonAktsomhet.sos");
         assertTrue(file.canRead());
@@ -355,7 +354,7 @@ public class SosiReaderTest extends TestCase {
             Geometry geometry = fi.getGeometry();
             if (geometry instanceof Polygon) {
                 Polygon p = (Polygon) geometry;
-                assertTrue("" + fi.getId(),  p.getExteriorRing().getNumPoints() >= 3);
+                assertTrue("" + fi.getId(), p.getExteriorRing().getNumPoints() >= 3);
                 for (int i = 0; i < p.getNumInteriorRing(); i++) {
                     assertTrue(p.getInteriorRingN(i).getNumPoints() >= 3);
                 }
