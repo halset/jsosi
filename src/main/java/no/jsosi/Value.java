@@ -13,11 +13,6 @@ public class Value {
             return value;
         }
 
-        // post number 0123
-        if (value.charAt(0) == '0') {
-            return value;
-        }
-
         boolean isInteger = true;
         for (int i = 0; i < value.length(); i++) {
             char c = value.charAt(i);
