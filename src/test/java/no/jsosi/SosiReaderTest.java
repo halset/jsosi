@@ -3,12 +3,15 @@ package no.jsosi;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.zip.GZIPInputStream;
 import java.util.zip.ZipInputStream;
 
 import com.vividsolutions.jts.geom.Envelope;
@@ -364,6 +367,29 @@ public class SosiReaderTest extends TestCase {
         }
         assertEquals(2, objtypes.size());
         assertEquals(1792, count);
+        ri.close();
+    }
+
+    public void testN1000Arealdekke() throws IOException {
+        File t = File.createTempFile("jsosi-n1000arealdekke", null);
+        File file = new File("src/test/resources/NO_N1000_Arealdekke.sos.gz");
+        Files.copy(new GZIPInputStream(new FileInputStream(file)), t.toPath(), StandardCopyOption.REPLACE_EXISTING);
+        file = t;
+
+        assertTrue(file.canRead());
+        SosiReader ri = new SosiReader(file);
+        assertEquals("EPSG:25833", ri.getCrs());
+        Feature fi = null;
+        int count = 0;
+        Set<String> objtypes = new HashSet<String>();
+        while ((fi = ri.nextFeature()) != null) {
+            assertNotNull(fi);
+            assertNotNull(fi.getGeometry());
+            count++;
+            objtypes.add(fi.get("OBJTYPE").toString());
+        }
+        assertEquals(19, objtypes.size());
+        assertEquals(49796, count);
         ri.close();
     }
 

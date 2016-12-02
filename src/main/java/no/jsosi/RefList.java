@@ -87,7 +87,16 @@ class RefList {
         for (Ref ref : refs) {
             cs.addAll(ref.getCoordinates(reader));
         }
-        return reader.getGeometryFactory().createLinearRing(cs.toArray(new Coordinate[cs.size()]));
+        try {
+            return reader.getGeometryFactory().createLinearRing(cs.toArray(new Coordinate[cs.size()]));
+        } catch (IllegalArgumentException e) {
+            if (cs.size() > 2 && !cs.get(0).equals2D(cs.get(cs.size() - 1))) {
+                // hack ring to close
+                cs.add(cs.get(0));
+                return reader.getGeometryFactory().createLinearRing(cs.toArray(new Coordinate[cs.size()]));
+            }
+            throw e;
+        }
     }
 
     @Override
