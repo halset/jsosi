@@ -98,7 +98,7 @@ public class SosiReaderTest extends TestCase {
         assertEquals(new Envelope(6724129, 6774390, 374177, 433608), r.getBounds());
 
         Feature f1 = r.nextFeature();
-        assertEquals(Integer.valueOf(10000101), f1.get("OPPDATERINGSDATO"));
+        assertEquals("10000101", f1.get("OPPDATERINGSDATO"));
         assertEquals("ÅpentOmråde", f1.get("OBJTYPE"));
         assertNull(f1.get("GATENAVN"));
         assertTrue(f1.getGeometry() instanceof Polygon);

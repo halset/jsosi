@@ -1,11 +1,19 @@
 package no.jsosi;
 
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.Set;
+
 public class Value {
 
-    private static final int MAXLENGTH_INT = Integer.valueOf(Integer.MAX_VALUE).toString().length() - 1;
-    private static final int MAXLENGTH_LONG = Long.valueOf(Long.MAX_VALUE).toString().length() - 1;
+    private static final Set<String> INT_COLUMNS;
 
-    public static Object value(String value) {
+    static {
+        INT_COLUMNS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("HØYDE", "GATENR", "HUSNR")));
+    }
+
+    public static Object value(String key, String value) {
         if (value == null) {
             return value;
         }
@@ -13,21 +21,8 @@ public class Value {
             return value;
         }
 
-        boolean isInteger = true;
-        for (int i = 0; i < value.length(); i++) {
-            char c = value.charAt(i);
-            if (!Character.isDigit(c)) {
-                isInteger = false;
-            }
-        }
-
-        if (isInteger) {
-            if (value.length() < MAXLENGTH_INT) {
-                return Integer.parseInt(value);
-            }
-            if (value.length() < MAXLENGTH_LONG) {
-                return Long.parseLong(value);
-            }
+        if (INT_COLUMNS.contains(key)) {
+            return Integer.valueOf(value);
         }
 
         return value;
