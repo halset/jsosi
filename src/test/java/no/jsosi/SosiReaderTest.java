@@ -393,4 +393,22 @@ public class SosiReaderTest extends TestCase {
         ri.close();
     }
 
+    public void testRestriksjonsOmrader() throws IOException {
+        File file = new File("src/test/resources/1417_N50_RestriksjonsOmrader.sos");
+        assertTrue(file.canRead());
+        SosiReader ri = new SosiReader(file);
+        Feature fi = null;
+        int count = 0;
+        Set<String> objtypes = new HashSet<String>();
+        while ((fi = ri.nextFeature()) != null) {
+            assertNotNull(fi);
+            assertNotNull(fi.getGeometry());
+            count++;
+            objtypes.add(fi.get("OBJTYPE").toString());
+        }
+        assertEquals(5, objtypes.size());
+        assertEquals(45, count);
+        ri.close();
+    }
+
 }

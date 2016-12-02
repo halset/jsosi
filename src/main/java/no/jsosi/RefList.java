@@ -57,7 +57,7 @@ class RefList {
     List<Ref> getHole(int n) {
         return Collections.unmodifiableList(list.get(n + 1));
     }
-    
+
     Set<Integer> getRefs() {
         Set<Integer> refs = new HashSet<Integer>();
         for (List<Ref> refList : list) {
@@ -70,23 +70,35 @@ class RefList {
 
     Geometry createGeometry(SosiReader reader) throws IOException {
         try {
-            LinearRing shell = createRing(reader, list.get(0));
+            Geometry outer = createRing(reader, list.get(0));
+
+            // handle a specific error condition
+            if (!(outer instanceof LinearRing) && list.size() == 1) {
+                return outer;
+            }
+
+            LinearRing shell = (LinearRing) outer;
             List<LinearRing> holes = new ArrayList<LinearRing>();
             for (int i = 1; i < list.size(); i++) {
-                holes.add(createRing(reader, list.get(i)));
+                holes.add((LinearRing) createRing(reader, list.get(i)));
             }
-            return reader.getGeometryFactory().createPolygon(shell,
-                    holes.toArray(new LinearRing[holes.size()]));
+            return reader.getGeometryFactory().createPolygon(shell, holes.toArray(new LinearRing[holes.size()]));
         } catch (RuntimeException e) {
             throw new RuntimeException("Could not create geometry for " + toString(), e);
         }
     }
 
-    private static LinearRing createRing(SosiReader reader, List<Ref> refs) throws IOException {
+    private static Geometry createRing(SosiReader reader, List<Ref> refs) throws IOException {
         List<Coordinate> cs = new ArrayList<Coordinate>();
         for (Ref ref : refs) {
             cs.addAll(ref.getCoordinates(reader));
         }
+
+        // handle a specific error condition
+        if (cs.size() == 2 && cs.get(0).equals2D(cs.get(1))) {
+            return reader.getGeometryFactory().createPoint(cs.get(0));
+        }
+
         try {
             return reader.getGeometryFactory().createLinearRing(cs.toArray(new Coordinate[cs.size()]));
         } catch (IllegalArgumentException e) {
