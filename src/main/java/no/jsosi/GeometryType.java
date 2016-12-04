@@ -6,7 +6,7 @@ import com.vividsolutions.jts.geom.GeometryFactory;
 
 public enum GeometryType {
 
-    PUNKT, KURVE, SVERM, FLATE, TEKST, OBJEKT;
+    PUNKT, KURVE, SVERM, FLATE, TEKST, OBJEKT, BUEP;
 
     public Geometry createGeometry(GeometryFactory gf, Coordinate[] coordinates) {
         switch (this) {
@@ -31,6 +31,8 @@ public enum GeometryType {
                 return gf.createGeometryCollection(new Geometry[0]);
             }
             return gf.createPoint(coordinates[0]);
+        case BUEP:
+            return Buep.create(gf, coordinates);
 		}
         return null;
     }
