@@ -9,8 +9,11 @@ public class Value {
 
     private static final Set<String> INT_COLUMNS;
 
+    private static final Set<String> FLOAT_COLUMNS;
+
     static {
         INT_COLUMNS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("HØYDE", "GATENR", "HUSNR")));
+        FLOAT_COLUMNS = Collections.unmodifiableSet(new HashSet<>(Arrays.asList("VERTIKALUTSTREKNING")));
     }
 
     public static Object value(String key, String value) {
@@ -23,6 +26,10 @@ public class Value {
 
         if (INT_COLUMNS.contains(key)) {
             return Integer.valueOf(value);
+        }
+
+        if (FLOAT_COLUMNS.contains(key)) {
+            return Float.valueOf(value);
         }
 
         return value;
