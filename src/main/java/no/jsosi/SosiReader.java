@@ -284,6 +284,10 @@ public class SosiReader implements Closeable {
             Coordinate coord = new Coordinate(Double.parseDouble(tokens[1]) * xyfactor,
                     Double.parseDouble(tokens[0]) * xyfactor);
 
+            if (dim >= 3) {
+                coord.z = Double.parseDouble(tokens[2]) * xyfactor;
+            }
+
             coords.add(coord);
 
             reader.mark(100);
