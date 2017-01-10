@@ -99,6 +99,11 @@ class RefList {
             return reader.getGeometryFactory().createPoint(cs.get(0));
         }
 
+        // hack a specific error condition
+        if (cs.size() == 3 && cs.get(0).equals2D(cs.get(2))) {
+        	cs.add(2, cs.get(1));
+        }
+        
         try {
             return reader.getGeometryFactory().createLinearRing(cs.toArray(new Coordinate[cs.size()]));
         } catch (IllegalArgumentException e) {
