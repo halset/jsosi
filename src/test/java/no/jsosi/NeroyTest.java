@@ -21,10 +21,6 @@ public class NeroyTest extends TestCase {
                 }
                 continue;
             }
-<<<<<<< HEAD
-=======
-            System.out.println("XX " + entry.getName());
->>>>>>> f494f88453081d8ca8d744d8d41d2744d68cbecb
             SosiReader reader = new SosiReader(zis);
             Feature fi = null;
             while ((fi = reader.nextFeature()) != null) {
