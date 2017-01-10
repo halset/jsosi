@@ -30,8 +30,6 @@ class RefIndex implements Closeable {
     private final Map<Integer, Long> posById = new HashMap<>();
     private final Set<Integer> allRefs = new HashSet<Integer>();
 
-    private byte[] pattern = new byte[] { '.', 'K', 'U', 'R', 'V', 'E', ' ' };
-
     public RefIndex(File file, double xyfactor) throws IOException {
 
         this.xyfactor = xyfactor;
@@ -44,12 +42,13 @@ class RefIndex implements Closeable {
             long pos = 0;
             int read = 0;
             char c;
+            final RefPattern pattern = new RefPattern();
             int patternIndex = 0;
             long patternMatchStart = 0;
             StringBuilder id = new StringBuilder();
             boolean idReading = false;
 
-            // look for lines like '.KURVE 21398:'
+            // look for lines like '.KURVE 21398:' and '.BUEP 34799:'
             while ((read = in.read()) >= 0) {
                 c = (char) read;
                 if (idReading) {
@@ -58,16 +57,17 @@ class RefIndex implements Closeable {
                         idReading = false;
                         id.setLength(0);
                         patternMatchStart = 0;
+                        pattern.reset();
                         patternIndex = 0;
                     } else {
                         id.append(c);
                     }
-                } else if (c == pattern[patternIndex]) {
+                } else if (pattern.match(c, patternIndex)) {
                     // match :)
                     if (patternIndex == 0) {
                         patternMatchStart = pos;
                     }
-                    if (patternIndex == (pattern.length - 1)) {
+                    if (pattern.atEndOfMatch(patternIndex)) {
                         // found the complete pattern, now look for id
                         idReading = true;
                         id.setLength(0);
@@ -78,6 +78,7 @@ class RefIndex implements Closeable {
                     idReading = false;
                     patternMatchStart = 0;
                     patternIndex = 0;
+                    pattern.reset();
                 }
                 pos++;
             }
