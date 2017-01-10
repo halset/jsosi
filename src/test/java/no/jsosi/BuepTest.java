@@ -50,4 +50,15 @@ public class BuepTest extends TestCase {
 
     }
 
+    public void testBuepHard() {
+        GeometryFactory gf = new GeometryFactory();
+        Coordinate c0 = new Coordinate(-39782.26, 6570926.04);
+        Coordinate c1 = new Coordinate(-39782.35, 6570926.04);
+        Coordinate c2 = new Coordinate(-39782.4, 6570926.11);
+        Geometry buep = Buep.create(gf, new Coordinate[] { c0, c1, c2 });
+        assertNotNull(buep);
+        assertTrue(buep instanceof LineString);
+        assertTrue(buep.isValid());
+    }
+
 }
