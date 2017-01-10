@@ -199,6 +199,10 @@ public class SosiReader implements Closeable {
                     head = true;
                     break;
                 }
+                
+                if ("DEF".equals(key)) {
+                	break;
+                }
 
                 GeometryType previousGeometryType = currentGeometryType;
                 Integer previousFeatureId = currentFeatureId;
