@@ -1,42 +1,54 @@
 package no.jsosi;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-
 class RefPattern {
 
-    private static final List<String> allCandidates = Arrays.asList("." + GeometryType.KURVE + " ",
-            "." + GeometryType.BUEP + " ");
+    private static final String[] allCandidates;
 
-    private final List<String> restCandidates = new ArrayList<>(allCandidates);
+    static {
+        allCandidates = new String[2];
+        allCandidates[0] = "." + GeometryType.KURVE + " ";
+        allCandidates[1] = "." + GeometryType.BUEP + " ";
+    }
+
+    private final String[] restCandidates;
 
     public RefPattern() {
+        restCandidates = new String[allCandidates.length];
+        reset();
     }
 
     public boolean match(char c, int p) {
-        for (Iterator<String> it = restCandidates.iterator(); it.hasNext();) {
-            String candidate = it.next();
-            if (candidate.length() < p) {
-                it.remove();
+        int rest = 0;
+        for (int i = 0; i < restCandidates.length; i++) {
+            String candidate = restCandidates[i];
+            if (candidate == null) {
                 continue;
             }
-            if (candidate.charAt(p) != c) {
-                it.remove();
+            if (candidate.length() < p || candidate.charAt(p) != c) {
+                restCandidates[i] = null;
                 continue;
             }
+            rest++;
         }
-        return !restCandidates.isEmpty();
+        return rest > 0;
     }
 
     public void reset() {
-        restCandidates.clear();
-        restCandidates.addAll(allCandidates);
+        System.arraycopy(allCandidates, 0, restCandidates, 0, allCandidates.length);
     }
 
     public boolean atEndOfMatch(int p) {
-        return restCandidates.size() == 1 && restCandidates.get(0).length() == (p + 1);
+        int ends = 0;
+        for (int i = 0; i < restCandidates.length; i++) {
+            String restCandidate = restCandidates[i];
+            if (restCandidate == null) {
+                continue;
+            }
+            if (restCandidate != null && restCandidate.length() == (p + 1)) {
+                ends++;
+            }
+        }
+        return ends == 1;
     }
 
 }
