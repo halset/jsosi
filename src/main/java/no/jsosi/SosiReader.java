@@ -170,7 +170,7 @@ public class SosiReader implements Closeable {
     private boolean head = false;
     private GeometryType currentGeometryType = null;
     private Integer currentFeatureId = null;
-    private final HashMap<String, Object> currentAttributes = new HashMap<String, Object>();
+    private final AttributeMap currentAttributes = new AttributeMap();
     private final List<Coordinate> currentCoordinates = new ArrayList<Coordinate>();
     private RefList currentRefs = null;
     private String lastAttributeKey;
@@ -180,13 +180,14 @@ public class SosiReader implements Closeable {
 
             // special case for multiple line text attribute value
             if (level == 0 && key.length() > 0 && key.startsWith(";")) {
-                Object prevValue = currentAttributes.get(lastAttributeKey);
+                Object prevValue = currentAttributes.getLastValueForKey(lastAttributeKey);
                 if (prevValue != null && prevValue instanceof String) {
                     String v = prevValue.toString() + "\n" + key.substring(1);
                     if (v.startsWith("\"") && v.endsWith("\"")) {
                         v = v.substring(1, v.length() - 1);
                     }
-                    currentAttributes.put(lastAttributeKey, Value.value(lastAttributeKey, v));
+                    currentAttributes.remove(lastAttributeKey);
+                    currentAttributes.add(lastAttributeKey, v);
                 }
                 continue;
             }
@@ -207,7 +208,7 @@ public class SosiReader implements Closeable {
                 GeometryType previousGeometryType = currentGeometryType;
                 Integer previousFeatureId = currentFeatureId;
 
-                Map<String, Object> previousAttributes = new HashMap<>(
+                AttributeMap previousAttributes = new AttributeMap(
                         currentAttributes);
                 Coordinate[] previousCoordinates = currentCoordinates
                         .toArray(new Coordinate[currentCoordinates.size()]);
@@ -246,7 +247,7 @@ public class SosiReader implements Closeable {
                     currentRefs.add(value);
                     readRefs(reader, currentRefs);
                 } else if (key != null && key.length() > 0 && value != null && !key.startsWith(";")) {
-                    currentAttributes.put(key, Value.value(key, value));
+                    currentAttributes.add(key, value);
                     lastAttributeKey = key;
                 }
 

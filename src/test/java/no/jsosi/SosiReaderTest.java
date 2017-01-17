@@ -6,13 +6,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.StandardCopyOption;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
-import java.util.zip.ZipInputStream;
 
 import com.vividsolutions.jts.geom.Envelope;
 import com.vividsolutions.jts.geom.Geometry;
@@ -234,14 +231,13 @@ public class SosiReaderTest extends TestCase {
             assertNotNull(fi);
             assertNotNull(fi.getGeometry());
 
-            for (Map.Entry<String, Object> e : fi.getAttributeMap().entrySet()) {
-                String key = e.getKey();
+            for (String key : fi.getAttributeKeySet()) {
                 if ("SSR".equals(key)) {
                     continue;
                 }
-                assertNotNull("feature should not have null key. " + fi.getAttributeMap().toString(), key);
-                assertTrue("feature should not have empty key. " + fi.getAttributeMap().toString(), key.length() > 0);
-                assertNotNull("key '" + key + "' should not have null value", e.getValue());
+                assertNotNull("feature should not have null key. " + fi.toString(), key);
+                assertTrue("feature should not have empty key. " + fi.toString(), key.length() > 0);
+                assertNotNull("key '" + key + "' should not have null value", fi.get(key));
             }
 
             count++;
@@ -291,7 +287,6 @@ public class SosiReaderTest extends TestCase {
         assertEquals(79724, count);
         ri.close();
     }
-
 
     public void testRadonAktsomhet() throws IOException {
         File file = new File("src/test/resources/RadonAktsomhet.sos");

@@ -2,8 +2,10 @@ package no.jsosi;
 
 import java.io.File;
 import java.io.FileInputStream;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.ZipInputStream;
@@ -40,7 +42,7 @@ public class NRLTest extends TestCase {
                 assertNotNull(fi.getGeometry());
                 count++;
                 objtypes.add(fi.get("OBJTYPE").toString());
-                keys.addAll(fi.getAttributeMap().keySet());
+                keys.addAll(fi.getAttributeKeySet());
                 featureById.put(fi.getId(), fi);
             }
             assertEquals(3, objtypes.size());
@@ -54,6 +56,9 @@ public class NRLTest extends TestCase {
             assertNotNull(f1);
             assertFalse("...AKILDE:NRL;...GKILDE:NRL;bardun festet i bakken og \nopp til kabel over dalen(spenn)"
                     .equals(f1.get("INFORMASJON")));
+            Object o = f1.get("INFORMASJON");
+            System.out.println(o);
+            System.out.println(f1);
             assertEquals("NRL", f1.get("AKILDE"));
             assertEquals("NRL", f1.get("GKILDE"));
             assertEquals("bardun festet i bakken og \nopp til kabel over dalen(spenn)", f1.get("INFORMASJON"));
@@ -70,6 +75,18 @@ public class NRLTest extends TestCase {
             
             Feature f3 = featureById.get(Integer.valueOf(291891));
             assertEquals("TOP", f3.get("HREF"));
+            
+            Feature f4 = featureById.get(Integer.valueOf(3));
+            assertEquals("JA", f4.get("LINJESPENN"));
+            Object lokalid = f4.get("LOKALID");
+            assertNotNull(lokalid);
+            assertTrue(lokalid instanceof Collection<?>);
+            Collection<?> lokalidList = (Collection<?>) lokalid;
+            assertEquals(3, lokalidList.size());
+            Iterator<?> lokalidListIterator = lokalidList.iterator();
+            assertEquals(Integer.valueOf(1076257), lokalidListIterator.next());
+            assertEquals(Integer.valueOf(1076260), lokalidListIterator.next());
+            assertEquals(Integer.valueOf(1076263), lokalidListIterator.next());
 
         } finally {
             IOUtils.silentClose(ri, zis, fis);
