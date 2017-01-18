@@ -39,10 +39,8 @@ public class SosiReaderTest extends TestCase {
         assertEquals(33545, features.size());
 
         Feature f = features.get(0);
-        assertEquals("Hans Hanssens vei !nocomment", f.get("GATENAVN"));
-        assertEquals("SNARØYA", f.get("POSTNAVN"));
         assertEquals("0219", f.get("KOMM"));
-        assertEquals(Integer.valueOf(4), f.get("HUSNR"));
+        assertEquals("{GATENR=2097, GATENAVN=Hans Hanssens vei !nocomment, HUSNR=4, BOKST=, UNR=, POSTNR=1367, POSTNAVN=SNARØYA, =}", f.get("AID").toString());
         assertNull(f.get("NØ"));
         assertNotNull(f.getGeometry());
         assertTrue(f.getGeometry() instanceof Point);
@@ -265,26 +263,6 @@ public class SosiReaderTest extends TestCase {
             count++;
         }
         assertEquals(2304, count);
-        ri.close();
-    }
-
-    public void testEnheterGrunnkrets() throws Exception {
-        File file = new File("src/test/resources/STAT_enheter_grunnkretser.sos");
-        assertTrue(file.canRead());
-        SosiReader ri = new SosiReader(file);
-        assertEquals("EPSG:25833", ri.getCrs());
-        assertEquals(new Envelope(6426048, 7962744, -99553, 1121942), ri.getBounds());
-        Feature fi = null;
-        int count = 0;
-        Set<String> objtypes = new HashSet<String>();
-        while ((fi = ri.nextFeature()) != null) {
-            assertNotNull(fi);
-            assertNotNull(fi.getGeometry());
-            count++;
-            objtypes.add(fi.get("OBJTYPE").toString());
-        }
-        assertEquals(8, objtypes.size());
-        assertEquals(79724, count);
         ri.close();
     }
 

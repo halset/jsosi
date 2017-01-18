@@ -1,9 +1,7 @@
 package no.jsosi;
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -15,110 +13,270 @@ import java.util.StringTokenizer;
  * ...AKILDE:NRL;...GKILDE:NRL;bardun festet i bakken og \nopp til kabel over
  * dalen(spenn)
  */
-class AttributeMap {
+class AttributeMap implements Cloneable {
 
-    private final Map<String, Object> m = new LinkedHashMap<>();
-    private String lastKey;
-    private Object lastValue;
+    private final TreeElement root;
+    private TreeElement currentTreeElement;
+    private int pathDepth = 0;
 
     AttributeMap() {
+        root = new TreeElement();
+        currentTreeElement = root;
     }
 
     AttributeMap(AttributeMap o) {
-        m.putAll(o.m);
+        this.root = (TreeElement) o.root.clone();
+        currentTreeElement = root;
     }
 
-    @SuppressWarnings("unchecked")
-    public void add(String key, Object value) {
+    public void addPathElement(String pathElement) {
+        currentTreeElement = currentTreeElement.addChild(pathElement);
+        pathDepth++;
+    }
 
-        if (value instanceof String) {
-            value = Value.value(key, (String) value);
-        }
-        lastKey = key;
-        lastValue = value;
+    public void removeLastPathElement() {
+        currentTreeElement = currentTreeElement.parent;
+        pathDepth--;
+    }
 
-        Object oldValue = m.get(key);
-        if (oldValue == null) {
-            m.put(key, value);
-        } else if (oldValue instanceof Collection<?>) {
-            Collection<Object> oldCollection = (Collection<Object>) oldValue;
-            List<Object> c = new ArrayList<>(oldCollection.size() + 1);
-            c.addAll(oldCollection);
-            c.add(value);
-            m.put(key, Collections.unmodifiableList(c));
-        } else {
-            List<Object> c = new ArrayList<>(2);
-            c.add(oldValue);
-            c.add(value);
-            m.put(key, Collections.unmodifiableList(c));
-        }
+    public int pathDepth() {
+        return pathDepth;
+    }
+
+    public void addValue(Object value) {
+        currentTreeElement.addValue(value);
     }
 
     public void remove(String key) {
-        m.remove(key);
+        root.remove(key);
     }
 
     public void computeSubValues() {
-        Set<String> keysToRemove = new HashSet<>();
-        Map<String, Object> extras = new LinkedHashMap<>();
-        for (Map.Entry<String, Object> e : m.entrySet()) {
-            String key = e.getKey();
-            Object value = e.getValue();
-
-            if (!(value instanceof String)) {
-                continue;
-            }
-
-            String vs = (String) value;
-            if (!(vs.contains(";") && vs.contains(":"))) {
-                continue;
-            }
-
-            // ...AKILDE:NRL;...GKILDE:NRL;bardun festet i bakken og \nopp
-            // til kabel over dalen(spenn)
-            keysToRemove.add(key);
-            StringTokenizer st = new StringTokenizer(value.toString(), ";");
-            while (st.hasMoreTokens()) {
-                String part = st.nextToken();
-                int p = part.indexOf(':');
-                if (part.startsWith(".") && p > 0) {
-                    while (part.startsWith(".")) {
-                        part = part.substring(1);
-                        p--;
-                    }
-                    extras.put(part.substring(0, p), part.substring(p + 1));
-                } else {
-                    extras.put(key, part);
-                }
-            }
-        }
-        for (String key : keysToRemove) {
-            m.remove(key);
-        }
-        m.putAll(extras);
+        root.computeSubValues();
     }
 
     public Object get(String key) {
-        return m.get(key);
+        Object v = root.get(key);
+        if (v instanceof TreeElement) {
+            TreeElement te = (TreeElement) v;
+            return te.toExternal();
+        }
+        return v;
     }
 
-    public Object getLastValueForKey(String key) {
-        return key.equals(lastKey) ? lastValue : null;
+    public Object getLastValue() {
+        return currentTreeElement.getLastValue();
+    }
+
+    public void removeLastValue() {
+        currentTreeElement.removeLastValue();
     }
 
     public Set<String> keySet() {
-        return Collections.unmodifiableSet(m.keySet());
+        return Collections.unmodifiableSet(root.children.keySet());
     }
 
     public void clear() {
-        m.clear();
-        lastKey = null;
-        lastValue = null;
+        root.clear();
+        currentTreeElement = root;
+        pathDepth = 0;
+    }
+
+    @Override
+    public Object clone() {
+        return new AttributeMap(this);
     }
 
     @Override
     public String toString() {
-        return "AttributeMap{" + m + "}";
+        return "AttributeMap{" + root + "}";
+    }
+
+    private static final class TreeElement implements Cloneable {
+
+        private TreeElement parent;
+        private List<Object> values;
+        private LazyMultimap<String, TreeElement> children;
+
+        public void remove(String key) {
+            if (children != null) {
+                children.remove(key);
+            }
+        }
+
+        public Object get(Object key) {
+            if (key instanceof Integer && values != null) {
+                Integer index = (Integer) key;
+                if (index < 0 || index >= values.size()) {
+                    return null;
+                }
+                return values.get(index.intValue());
+            }
+
+            if (key instanceof String && children != null) {
+                return children.get(key);
+            }
+
+            return null;
+        }
+
+        public TreeElement addChild(String key) {
+            if (children == null) {
+                children = new LazyMultimap<>();
+            }
+
+            TreeElement child = new TreeElement();
+            child.parent = this;
+            children.add(key, child);
+            return child;
+        }
+
+        public void addValue(Object newValue) {
+            if (values == null) {
+                values = new ArrayList<>(2);
+            }
+            values.add(newValue);
+        }
+
+        public Object getLastValue() {
+            if (values == null) {
+                return null;
+            }
+            return values.get(values.size() - 1);
+        }
+
+        public void removeLastValue() {
+            if (values == null) {
+                return;
+            }
+            values.remove(values.size() - 1);
+        }
+
+        public Object toExternal() {
+            if ((values == null || values.isEmpty()) && (children == null || children.isEmpty())) {
+                return null;
+            }
+
+            if (children != null && !children.isEmpty()) {
+                Map<String, Object> r = new LinkedHashMap<>();
+                for (String key : children.keySet()) {
+                    List<Object> vs = new ArrayList<>();
+                    for (TreeElement te : children.getAll(key)) {
+                        Object v = te.toExternal();
+                        if (v != null) {
+                            vs.add(v);
+                        }
+                    }
+                    if (vs.size() == 1) {
+                        r.put(key, vs.get(0));
+                    } else if (vs.size() > 1) {
+                        r.put(key, vs);
+                    }
+                }
+
+                if (values != null) {
+                    if (values.size() == 1) {
+                        r.put("", values.get(0));
+                    } else if (values.size() > 1) {
+                        r.put("", values);
+                    }
+                }
+
+                return r;
+            }
+
+            if (values != null && !values.isEmpty()) {
+                if (values.size() == 1) {
+                    return values.get(0);
+                }
+                return values;
+            }
+
+            return null;
+        }
+
+        public void computeSubValues() {
+
+            if (values != null) {
+                for (Object value : new ArrayList<>(values)) {
+                    if (!(value instanceof String)) {
+                        continue;
+                    }
+
+                    String vs = (String) value;
+                    if (!(vs.contains(";") && vs.contains(":"))) {
+                        continue;
+                    }
+
+                    // ...AKILDE:NRL;...GKILDE:NRL;bardun festet i bakken og
+                    // \nopp //
+                    // til
+                    // kabel over dalen(spenn)
+                    // TreeElement submap = new TreeElement();
+                    StringTokenizer st = new StringTokenizer(value.toString(), ";");
+                    while (st.hasMoreTokens()) {
+                        String part = st.nextToken();
+                        int p = part.indexOf(':');
+                        if (part.startsWith(".") && p > 0) {
+                            while (part.startsWith(".")) {
+                                part = part.substring(1);
+                                p--;
+                            }
+                            addChild(part.substring(0, p)).addValue(part.substring(p + 1));
+                        } else {
+                            addValue(part);
+                        }
+                    }
+
+                    values.remove(value);
+                }
+            }
+
+            if (children != null) {
+                for (String key : children.keySet()) {
+                    for (TreeElement te : children.getAll(key)) {
+                        te.computeSubValues();
+                    }
+
+                }
+            }
+        }
+
+        public void clear() {
+            values = null;
+            children = null;
+        }
+
+        @SuppressWarnings("unchecked")
+        @Override
+        public Object clone() {
+            TreeElement c = new TreeElement();
+            if (values != null) {
+                c.values = new ArrayList<>(values);
+            }
+            if (children != null) {
+                c.children = (LazyMultimap<String, TreeElement>) children.clone();
+            }
+            c.fixParent();
+            return c;
+        }
+
+        private void fixParent() {
+            if (children != null) {
+                for (String key : children.keySet()) {
+                    for (TreeElement te : children.getAll(key)) {
+                        te.parent = this;
+                        te.fixParent();
+                    }
+                }
+            }
+        }
+
+        @Override
+        public String toString() {
+            return "TreeElement{values=" + values + ",children=" + children + "}";
+        }
+
     }
 
 }

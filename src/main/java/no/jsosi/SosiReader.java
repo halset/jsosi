@@ -173,21 +173,20 @@ public class SosiReader implements Closeable {
     private final AttributeMap currentAttributes = new AttributeMap();
     private final List<Coordinate> currentCoordinates = new ArrayList<Coordinate>();
     private RefList currentRefs = null;
-    private String lastAttributeKey;
 
     public Feature nextFeature() throws IOException {
         while (readLine()) {
 
             // special case for multiple line text attribute value
             if (level == 0 && key.length() > 0 && key.startsWith(";")) {
-                Object prevValue = currentAttributes.getLastValueForKey(lastAttributeKey);
+                Object prevValue = currentAttributes.getLastValue();
                 if (prevValue != null && prevValue instanceof String) {
                     String v = prevValue.toString() + "\n" + key.substring(1);
                     if (v.startsWith("\"") && v.endsWith("\"")) {
                         v = v.substring(1, v.length() - 1);
                     }
-                    currentAttributes.remove(lastAttributeKey);
-                    currentAttributes.add(lastAttributeKey, v);
+                    currentAttributes.removeLastValue();
+                    currentAttributes.addValue(v);
                 }
                 continue;
             }
@@ -223,7 +222,6 @@ public class SosiReader implements Closeable {
 
                 currentAttributes.clear();
                 currentCoordinates.clear();
-                lastAttributeKey = null;
 
                 if (head) {
                     head = false;
@@ -247,8 +245,7 @@ public class SosiReader implements Closeable {
                     currentRefs.add(value);
                     readRefs(reader, currentRefs);
                 } else if (key != null && key.length() > 0 && value != null && !key.startsWith(";")) {
-                    currentAttributes.add(key, value);
-                    lastAttributeKey = key;
+                    currentAttributes.addValue(Value.value(key, value));
                 }
 
             }
@@ -370,6 +367,22 @@ public class SosiReader implements Closeable {
         } else {
             key = line;
             value = null;
+        }
+        
+        if (level > 1 && !key.equals("NØ")) {
+            int featureLevel = level - 1;
+            if (featureLevel > currentAttributes.pathDepth()) {
+                currentAttributes.addPathElement(key);
+            } else if (featureLevel == currentAttributes.pathDepth()) {
+                currentAttributes.removeLastPathElement();
+                currentAttributes.addPathElement(key);
+            } else if (featureLevel < currentAttributes.pathDepth()) {
+                while (featureLevel < currentAttributes.pathDepth()) {
+                    currentAttributes.removeLastPathElement();
+                }
+                currentAttributes.removeLastPathElement();
+                currentAttributes.addPathElement(key);
+            }
         }
 
         return true;
