@@ -75,6 +75,15 @@ class AttributeMap implements Cloneable {
     public Set<String> keySet() {
         return Collections.unmodifiableSet(root.children.keySet());
     }
+    
+    @SuppressWarnings("unchecked")
+    public Map<String, Object> toExternal() {
+        Object o = root.toExternal();
+        if (o instanceof Map) {
+            return (Map<String, Object>)o;
+        }
+        throw new IllegalStateException("unknown external" + o);
+    }
 
     public void clear() {
         root.clear();

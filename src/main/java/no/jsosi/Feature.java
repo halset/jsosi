@@ -2,6 +2,8 @@ package no.jsosi;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.Map;
 import java.util.Set;
 
 import com.vividsolutions.jts.geom.Coordinate;
@@ -33,6 +35,10 @@ public class Feature {
 
     public Set<String> getAttributeKeySet() {
         return Collections.unmodifiableSet(attributes.keySet());
+    }
+    
+    public Map<String, Object> getAttributeMap() {
+        return attributes.toExternal();
     }
 
     public Object get(String key) {
