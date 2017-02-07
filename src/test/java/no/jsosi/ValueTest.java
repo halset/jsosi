@@ -10,5 +10,5 @@ public class ValueTest extends TestCase {
         assertEquals(Float.valueOf(123), Value.value("HØYDE", "0123"));
         assertEquals(Float.valueOf(123), Value.value("VERTIKALUTSTREKNING", "0123"));
     }
-    
+
 }
