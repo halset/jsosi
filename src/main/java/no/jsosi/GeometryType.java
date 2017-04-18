@@ -16,6 +16,9 @@ public enum GeometryType {
             }
             return gf.createPoint(coordinates[0]);
         case KURVE:
+            if (coordinates.length == 1) {
+                return gf.createPoint(coordinates[0]);
+            }
             return gf.createLineString(coordinates);
         case SVERM:
             return gf.createMultiPoint(coordinates);
