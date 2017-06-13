@@ -37,50 +37,54 @@ class RefIndex implements Closeable {
         // first find all '.KURVE '
         InputStream in = null;
         try {
-            in = new BufferedInputStream(new FileInputStream(file));
+            int bufSize = 1024 * 1024;
+            in = new BufferedInputStream(new FileInputStream(file), bufSize);
 
             long pos = 0;
-            int read = 0;
             char c;
             final RefPattern pattern = new RefPattern();
             int patternIndex = 0;
             long patternMatchStart = 0;
             StringBuilder id = new StringBuilder();
             boolean idReading = false;
+            byte[] buf = new byte[bufSize];
+            int len;
 
             // look for lines like '.KURVE 21398:' and '.BUEP 34799:'
-            while ((read = in.read()) >= 0) {
-                c = (char) read;
-                if (idReading) {
-                    if (':' == c) {
-                        posById.put(Integer.valueOf(id.toString()), patternMatchStart);
-                        idReading = false;
-                        id.setLength(0);
-                        patternMatchStart = 0;
-                        pattern.reset();
-                        patternIndex = 0;
+            while ((len = in.read(buf)) > 0) {
+                for (int i = 0; i < len; i++) {
+                    c = (char) buf[i];
+                    if (idReading) {
+                        if (':' == c) {
+                            posById.put(Integer.valueOf(id.toString()), patternMatchStart);
+                            idReading = false;
+                            id.setLength(0);
+                            patternMatchStart = 0;
+                            pattern.reset();
+                            patternIndex = 0;
+                        } else {
+                            id.append(c);
+                        }
+                    } else if (pattern.match(c, patternIndex)) {
+                        // match :)
+                        if (patternIndex == 0) {
+                            patternMatchStart = pos;
+                        }
+                        if (pattern.atEndOfMatch(patternIndex)) {
+                            // found the complete pattern, now look for id
+                            idReading = true;
+                            id.setLength(0);
+                        }
+                        patternIndex++;
                     } else {
-                        id.append(c);
+                        // no match :(
+                        idReading = false;
+                        patternMatchStart = 0;
+                        patternIndex = 0;
+                        pattern.reset();
                     }
-                } else if (pattern.match(c, patternIndex)) {
-                    // match :)
-                    if (patternIndex == 0) {
-                        patternMatchStart = pos;
-                    }
-                    if (pattern.atEndOfMatch(patternIndex)) {
-                        // found the complete pattern, now look for id
-                        idReading = true;
-                        id.setLength(0);
-                    }
-                    patternIndex++;
-                } else {
-                    // no match :(
-                    idReading = false;
-                    patternMatchStart = 0;
-                    patternIndex = 0;
-                    pattern.reset();
+                    pos = pos + 1l;
                 }
-                pos++;
             }
         } finally {
             IOUtils.silentClose(in);
@@ -122,7 +126,7 @@ class RefIndex implements Closeable {
         List<Coordinate> coords = new ArrayList<>();
 
         if (!channel.isOpen()) {
-            System.out.println("whatt?");
+            throw new IllegalStateException("closed file channel");
         }
 
         channel.position(position.longValue());
