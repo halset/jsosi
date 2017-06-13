@@ -8,6 +8,8 @@ public class Tegnsett {
     
     public static String getCharsetForTegnsett(String characterSet) {
         
+        characterSet = characterSet.trim();
+        
         if (characterSet.startsWith("ISO") && !characterSet.startsWith("ISO-")) {
             characterSet = characterSet.replace("ISO", "ISO-");
         }
