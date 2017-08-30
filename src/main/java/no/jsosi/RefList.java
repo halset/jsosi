@@ -38,7 +38,10 @@ class RefList {
             if (token.endsWith(")")) {
                 token = token.substring(0, token.length() - 1);
             }
-            current.add(Ref.create(token));
+            Ref ref = Ref.create(token);
+            if (ref != null) {
+                current.add(ref);
+            }
         }
     }
 

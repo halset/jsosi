@@ -12,6 +12,7 @@ public class RefTest extends TestCase {
         assertRef(123, true, Ref.create(" : 123 "));
         assertRef(123, true, Ref.create("123"));
         assertRef(123, false, Ref.create("-123"));
+        assertNull(Ref.create("MV"));
     }
 
     public void testToString() {

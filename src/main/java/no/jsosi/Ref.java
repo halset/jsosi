@@ -29,7 +29,11 @@ public class Ref {
                 forward = false;
                 break;
             default:
-                return new Ref(Integer.parseInt(value.substring(i).trim()), forward);
+                try {
+                    return new Ref(Integer.parseInt(value.substring(i).trim()), forward);
+                } catch (NumberFormatException e) {
+                    return null;
+                }
             }
         }
         return null;
