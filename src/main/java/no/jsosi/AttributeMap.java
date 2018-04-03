@@ -61,6 +61,16 @@ class AttributeMap implements Cloneable {
             TreeElement te = (TreeElement) v;
             return te.toExternal();
         }
+        if (v instanceof List<?>) {
+            List<Object> vo = new ArrayList<>((List<?>) v);
+            for (int i = 0; i < vo.size(); i++) {
+                Object voo = vo.get(i);
+                if (voo instanceof TreeElement) {
+                    vo.set(i, ((TreeElement) voo).toExternal());
+                }
+            }
+            return Collections.unmodifiableList(vo);
+        }
         return v;
     }
 

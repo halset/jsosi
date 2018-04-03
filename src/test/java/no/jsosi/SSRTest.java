@@ -48,7 +48,7 @@ public class SSRTest extends TestCase {
         Feature fi = ri.nextFeature();
         assertNotNull(fi);
         
-        List<?> stedsnavn = (List<?>) fi.getAttributeMap().get("STEDSNAVN");
+        List<?> stedsnavn = (List<?>) fi.get("STEDSNAVN");
         assertNotNull(stedsnavn);
         assertEquals(2, stedsnavn.size());
         
