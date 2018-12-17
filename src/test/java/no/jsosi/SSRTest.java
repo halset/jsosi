@@ -66,4 +66,19 @@ public class SSRTest extends TestCase {
         ri.close();
     }
 
+    public void testSSRKurveWithoutAttributes() throws IOException {
+        File file = new File("src/test/resources/SSR-KurveWithoutAttributes.sos");
+        assertTrue(file.canRead());
+        SosiReader ri = new SosiReader(file);
+
+        Feature fi = null;
+        while ((fi = ri.nextFeature()) != null) {
+            assertNotNull(fi);
+            assertNotNull(fi.getGeometry());
+            assertNotNull(fi.getAttributeMap());
+        }
+
+        ri.close();
+    }
+
 }

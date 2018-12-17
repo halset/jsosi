@@ -89,10 +89,13 @@ class AttributeMap implements Cloneable {
     @SuppressWarnings("unchecked")
     public Map<String, Object> toExternal() {
         Object o = root.toExternal();
+        if (o == null) {
+            return Collections.emptyMap();
+        }
         if (o instanceof Map) {
             return (Map<String, Object>)o;
         }
-        throw new IllegalStateException("unknown external" + o);
+        throw new IllegalStateException("unknown external " + o);
     }
 
     public void clear() {
