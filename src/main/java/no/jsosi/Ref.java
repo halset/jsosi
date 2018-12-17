@@ -5,7 +5,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import org.locationtech.jts.geom.Coordinate;
+import com.vividsolutions.jts.geom.Coordinate;
 
 public class Ref {
 
