@@ -2,7 +2,7 @@
 
 A java SOSI parser
 
-# Maven
+# Maven - with JTS from LocationTech
 
 ```
 <repository>
@@ -13,7 +13,22 @@ A java SOSI parser
 <dependency>
     <groupId>no.jsosi</groupId>
     <artifactId>jsosi</artifactId>
-    <version>1.2.0</version>
+    <version>1.2.1</version>
+</dependency>
+````
+
+# Maven - with JTS from Vividsolutions 
+
+```
+<repository>
+    <id>ECC</id>
+    <url>https://github.com/ElectronicChartCentre/ecc-mvn-repo/raw/master/releases</url>
+</repository>
+
+<dependency>
+    <groupId>no.jsosi</groupId>
+    <artifactId>jsosi</artifactId>
+    <version>1.1.4</version>
 </dependency>
 ````
 
