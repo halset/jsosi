@@ -2,6 +2,7 @@ package no.jsosi;
 
 import java.io.IOException;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.Set;
 
@@ -16,6 +17,9 @@ public class Feature {
     private final Coordinate[] coordinates;
     private final AttributeMap attributes;
     private final RefList refs;
+    private Map<String, Geometry> extraGeometryByName; 
+    
+    public static final String KEY_TEKST_LINJE = "TEKST_LINJE";
 
     Feature(SosiReader reader, Integer id, GeometryType geometryType, AttributeMap attributes, Coordinate[] coordinates,
             RefList refs) {
@@ -26,6 +30,19 @@ public class Feature {
         this.refs = refs;
         this.attributes = new AttributeMap(attributes);
         this.attributes.computeSubValues();
+        
+        // for TEKST with 3 coordinates, create a line between the two last coordinates
+        // for the text direction
+        if (geometryType == GeometryType.TEKST && coordinates.length == 3) {
+            Coordinate start = coordinates[1];
+            Coordinate end = coordinates[2];
+            if (!start.equals2D(end)) {
+                extraGeometryByName = new HashMap<>(1);
+                extraGeometryByName.put(KEY_TEKST_LINJE,
+                        reader.getGeometryFactory().createLineString(new Coordinate[] { start, end }));
+            }
+        }
+        
     }
 
     public Integer getId() {
@@ -54,6 +71,17 @@ public class Feature {
         } else {
             return geometryType.createGeometry(reader.getGeometryFactory(), coordinates);
         }
+    }
+    
+    public boolean hasExtraGeometries() {
+        return extraGeometryByName != null && !extraGeometryByName.isEmpty();
+    }
+    
+    public Map<String, Geometry> getExtraGeometryByName() {
+        if (extraGeometryByName == null) {
+            return Collections.emptyMap();
+        }
+        return Collections.unmodifiableMap(extraGeometryByName);
     }
 
     int getCoordinateCount() throws IOException {

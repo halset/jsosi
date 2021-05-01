@@ -7,13 +7,13 @@ A java SOSI parser
 ```
 <repository>
     <id>ECC</id>
-    <url>https://github.com/ElectronicChartCentre/ecc-mvn-repo/raw/master/releases</url>
+    <url>https://maven.ecc.no/releases</url>
 </repository>
 
 <dependency>
     <groupId>no.jsosi</groupId>
     <artifactId>jsosi</artifactId>
-    <version>1.2.3</version>
+    <version>1.2.4</version>
 </dependency>
 ````
 
@@ -22,7 +22,7 @@ A java SOSI parser
 ```
 <repository>
     <id>ECC</id>
-    <url>https://github.com/ElectronicChartCentre/ecc-mvn-repo/raw/master/releases</url>
+    <url>https://maven.ecc.no/releases</url>
 </repository>
 
 <dependency>

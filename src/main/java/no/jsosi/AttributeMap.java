@@ -55,6 +55,20 @@ class AttributeMap implements Cloneable {
         root.computeSubValues();
     }
 
+    public void put(String key, Object value) {
+        Object v = root.get(key);
+        if (v == null) {
+            root.addChild(key).addValue(value);
+            return;
+        }
+        if (v instanceof TreeElement) {
+            TreeElement te = (TreeElement) v;
+            te.addValue(value);
+            return;
+        }
+        throw new IllegalStateException("do not know how to add value to: " + v);
+    }
+
     public Object get(String key) {
         Object v = root.get(key);
         if (v instanceof TreeElement) {

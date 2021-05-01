@@ -334,5 +334,19 @@ public class SosiReaderTest extends TestCase {
         assertEquals(45, count);
         ri.close();
     }
+    
+    public void testTextRotation() throws IOException {
+        File file = new File("src/test/resources/0540_Navn_utf8.sos");
+        assertTrue(file.canRead());
+        SosiReader ri = new SosiReader(file);
+        assertEquals("EPSG:25833", ri.getCrs());
+        assertEquals(new Envelope(6703549, 6771747, 179199, 236843), ri.getBounds());
+        Feature fi = ri.nextFeature();
+        ri.close();
+        assertNotNull(fi);
+        assertNotNull(fi.getGeometry());
+        assertTrue(fi.hasExtraGeometries());
+        assertNotNull(fi.getExtraGeometryByName().get(Feature.KEY_TEKST_LINJE));
+    }
 
 }
