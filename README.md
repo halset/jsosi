@@ -13,7 +13,7 @@ A java SOSI parser
 <dependency>
     <groupId>no.jsosi</groupId>
     <artifactId>jsosi</artifactId>
-    <version>1.2.4</version>
+    <version>1.2.5</version>
 </dependency>
 ````
 
